@@ -1,0 +1,55 @@
+polygon_createp(): Creating pdyn with a set of points
+pdyn:
+Polygon: 5 vertices
+  ( 30.000, 30.000, 1.000 )
+  ( 220.000, 30.000, 1.000 )
+  ( 180.000, 200.000, 1.000 )
+  ( 150.000, 130.000, 1.000 )
+  ( 60.000, 180.000, 1.000 )
+polygon_init(): initializing pstat
+pstat:
+Polygon: 0 vertices
+polygon_set(): adding points to pstat
+pstat:
+Polygon: 3 vertices
+  ( 30.000, 30.000, 1.000 )
+  ( 220.000, 30.000, 1.000 )
+  ( 180.000, 200.000, 1.000 )
+polygon_clear(): deleting points from pstat
+pstat:
+Polygon: 0 vertices
+polygon_copy(): copying from pdyn to pstat
+pstat:
+Polygon: 5 vertices
+  ( 30.000, 30.000, 1.000 )
+  ( 220.000, 30.000, 1.000 )
+  ( 180.000, 200.000, 1.000 )
+  ( 150.000, 130.000, 1.000 )
+  ( 60.000, 180.000, 1.000 )
+polygon_clear(): deleting points from pdyn
+pdyn:
+Polygon: 0 vertices
+polygon_set(): overwriting vertices in pstat
+pstat:
+Polygon: 4 vertices
+  ( 30.000, 30.000, 1.000 )
+  ( 220.000, 30.000, 1.000 )
+  ( 180.000, 200.000, 1.000 )
+  ( 150.000, 130.000, 1.000 )
+polygon_copy(): copying from pstat to pdyn
+pdyn:
+Polygon: 4 vertices
+  ( 30.000, 30.000, 1.000 )
+  ( 220.000, 30.000, 1.000 )
+  ( 180.000, 200.000, 1.000 )
+  ( 150.000, 130.000, 1.000 )
+polygon_set(): overwriting vertices in pstat
+polygon_drawFill(): drawing pdyn
+polygon_set(): overwriting vertices in pstat
+pstat:
+Polygon: 3 vertices
+  ( 30.000, 30.000, 1.000 )
+  ( 220.000, 30.000, 1.000 )
+  ( 180.000, 200.000, 1.000 )
+polygon_drawFill(): drawing pstat
+writing output
