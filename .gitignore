@@ -1,11 +1,17 @@
 # Prerequisites
 *.d
+*.DS_Store
 
 # Object files
 *.o
 *.ko
 *.obj
 *.elf
+
+# Image files
+*.ppm
+*.png
+*.gif
 
 # Linker output
 *.ilk
