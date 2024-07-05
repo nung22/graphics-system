@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "module.h"
 
 // Create a new element and initialize it
@@ -262,7 +263,7 @@ void module_draw(Module *md, Matrix *VTM, Matrix *GTM, DrawState *ds, Lighting *
       matrix_xformLine(VTM, &L);   // Transform by VTM
       line_normalize(&L);          // Normalize by the homogeneous coordinate
       printf("drawing line (%.2f %.2f) to (%.2f %.2f)\n",
-            L.a.val[0], L.a.val[1], L.b.val[0], L.b.val[1]);
+             L.a.val[0], L.a.val[1], L.b.val[0], L.b.val[1]);
       line_draw(&L, src, ds->color); // Draw the line
       break;
     }
@@ -275,7 +276,7 @@ void module_draw(Module *md, Matrix *VTM, Matrix *GTM, DrawState *ds, Lighting *
       matrix_xformPolygon(GTM, &P);      // transform by GTM
       matrix_xformPolygon(VTM, &P);      // transform by VTM
       polygon_normalize(&P);             // normalize by the homogeneous coordinate
-      polygon_print(&P, stdout);        // print the polygon data
+      polygon_print(&P, stdout);         // print the polygon data
       if (ds->shade == ShadeFrame)
       {
         polygon_draw(&P, src, ds->color); // draw the boundary of the polygon
@@ -293,6 +294,10 @@ void module_draw(Module *md, Matrix *VTM, Matrix *GTM, DrawState *ds, Lighting *
 
     case ObjIdentity:
       matrix_identity(&LTM); // set LTM to identity
+      break;
+
+    case ObjMatrix:
+      matrix_multiply(&(e->obj.matrix), &LTM, &LTM); // update LTM
       break;
 
     case ObjModule:
@@ -361,8 +366,123 @@ void module_rotateXYZ(Module *md, Vector *u, Vector *v, Vector *w)
   module_insert(md, e);
 }
 
+// Insert a color into a module
+void module_color(Module *md, Color *c)
+{
+  Element *e = element_init(ObjColor, c);
+  module_insert(md, e);
+}
+
+// Insert a body color into a module
+void module_bodyColor(Module *md, Color *c)
+{
+  Element *e = element_init(ObjBodyColor, c);
+  module_insert(md, e);
+}
+
+// Insert a surface color into a module
+void module_surfaceColor(Module *md, Color *c)
+{
+  Element *e = element_init(ObjSurfaceColor, c);
+  module_insert(md, e);
+}
+
+// Insert a surface coefficient into a module
+void module_surfaceCoeff(Module *md, float coeff)
+{
+  Element *e = element_init(ObjSurfaceCoeff, &coeff);
+  module_insert(md, e);
+}
+
+/* Function definitions for module operations */
+
+// Use the de Casteljau algorithm to subdivide a Bezier curve and add the lines to a module
+void module_bezierCurve(Module *m, BezierCurve *b, int divisions)
+{
+  if (!m || !b)
+    return;
+
+  if (divisions == 0)
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      Line line;
+      line_set(&line, b->cp[i], b->cp[i + 1]);
+      module_line(m, &line);
+    }
+  }
+  else
+  {
+    BezierCurve left, right;
+    bezierCurve_init(&left);
+    bezierCurve_init(&right);
+    bezierCurve_subdivide(b, &left, &right);
+    module_bezierCurve(m, &left, divisions - 1);
+    module_bezierCurve(m, &right, divisions - 1);
+  }
+}
+
+// Use the de Casteljau algorithm to subdivide a Bezier surface and add to the module
+void module_bezierSurface(Module *m, BezierSurface *b, int divisions, int solid)
+{
+  if (!m || !b)
+    return;
+
+  if (divisions == 0)
+  {
+    if (solid)
+    {
+      // Add triangles
+      for (int i = 0; i < 3; i++)
+      {
+        for (int j = 0; j < 3; j++)
+        {
+          Polygon poly;
+          polygon_init(&poly);
+          Point vertices[4] = {
+              b->cp[i * 4 + j],
+              b->cp[i * 4 + j + 1],
+              b->cp[(i + 1) * 4 + j + 1],
+              b->cp[(i + 1) * 4 + j]};
+          polygon_set(&poly, 4, vertices);
+          module_polygon(m, &poly);
+        }
+      }
+    }
+    else
+    {
+      // Add lines
+      for (int i = 0; i < 4; i++)
+      {
+        for (int j = 0; j < 3; j++)
+        {
+          Line line;
+          line_set(&line, b->cp[i * 4 + j], b->cp[i * 4 + j + 1]);
+          module_line(m, &line);
+          line_set(&line, b->cp[j * 4 + i], b->cp[(j + 1) * 4 + i]);
+          module_line(m, &line);
+        }
+      }
+    }
+  }
+  else
+  {
+    BezierSurface topLeft, topRight, bottomLeft, bottomRight;
+    bezierSurface_init(&topLeft);
+    bezierSurface_init(&topRight);
+    bezierSurface_init(&bottomLeft);
+    bezierSurface_init(&bottomRight);
+    bezierSurface_subdivide(b, &topLeft, &topRight, &bottomLeft, &bottomRight);
+    module_bezierSurface(m, &topLeft, divisions - 1, solid);
+    module_bezierSurface(m, &topRight, divisions - 1, solid);
+    module_bezierSurface(m, &bottomLeft, divisions - 1, solid);
+    module_bezierSurface(m, &bottomRight, divisions - 1, solid);
+  }
+}
+
 // Insert a cube into a module
-void module_cube(Module *md, int solid) {
+void module_cube(Module *md, int solid)
+{
   Point pts[8];
 
   // Define the vertices of the cube
@@ -375,8 +495,8 @@ void module_cube(Module *md, int solid) {
   point_set3D(&pts[6], 1, 1, 1);
   point_set3D(&pts[7], -1, 1, 1);
 
-
-  if (solid) {
+  if (solid)
+  {
     Polygon p;
     Vector normals[6];
     polygon_init(&p);
@@ -436,7 +556,9 @@ void module_cube(Module *md, int solid) {
     module_polygon(md, &p);
 
     polygon_clear(&p);
-  } else {
+  }
+  else
+  {
     Line l;
 
     // Front face lines
@@ -471,31 +593,89 @@ void module_cube(Module *md, int solid) {
   }
 }
 
-
-// Insert a color into a module
-void module_color(Module *md, Color *c)
+void module_cylinder(Module *mod, int sides, int solid)
 {
-  Element *e = element_init(ObjColor, c);
-  module_insert(md, e);
-}
+  if (!mod || sides < 3)
+  {
+    return;
+  }
 
-// Insert a body color into a module
-void module_bodyColor(Module *md, Color *c)
-{
-  Element *e = element_init(ObjBodyColor, c);
-  module_insert(md, e);
-}
+  Polygon p;
+  Point xtop, xbot;
+  double x1, x2, z1, z2;
+  int i;
 
-// Insert a surface color into a module
-void module_surfaceColor(Module *md, Color *c)
-{
-  Element *e = element_init(ObjSurfaceColor, c);
-  module_insert(md, e);
-}
+  polygon_init(&p);
+  point_set3D(&xtop, 0, 1.0, 0.0);
+  point_set3D(&xbot, 0, 0.0, 0.0);
 
-// Insert a surface coefficient into a module
-void module_surfaceCoeff(Module *md, float coeff)
-{
-  Element *e = element_init(ObjSurfaceCoeff, &coeff);
-  module_insert(md, e);
+  for (i = 0; i < sides; i++)
+  {
+    Point pt[4];
+
+    x1 = cos(i * M_PI * 2.0 / sides);
+    z1 = sin(i * M_PI * 2.0 / sides);
+    x2 = cos(((i + 1) % sides) * M_PI * 2.0 / sides);
+    z2 = sin(((i + 1) % sides) * M_PI * 2.0 / sides);
+
+    if (solid)
+    {
+      // Top fan triangle
+      point_copy(&pt[0], &xtop);
+      point_set3D(&pt[1], x1, 1.0, z1);
+      point_set3D(&pt[2], x2, 1.0, z2);
+
+      polygon_set(&p, 3, pt);
+      module_polygon(mod, &p);
+
+      // Bottom fan triangle
+      point_copy(&pt[0], &xbot);
+      point_set3D(&pt[1], x1, 0.0, z1);
+      point_set3D(&pt[2], x2, 0.0, z2);
+
+      polygon_set(&p, 3, pt);
+      module_polygon(mod, &p);
+
+      // Side quadrilateral
+      point_set3D(&pt[0], x1, 0.0, z1);
+      point_set3D(&pt[1], x2, 0.0, z2);
+      point_set3D(&pt[2], x2, 1.0, z2);
+      point_set3D(&pt[3], x1, 1.0, z1);
+
+      polygon_set(&p, 4, pt);
+      module_polygon(mod, &p);
+    }
+    else
+    {
+      // Wireframe: top circle
+      Line line;
+      point_set3D(&pt[0], x1, 1.0, z1);
+      point_set3D(&pt[1], x2, 1.0, z2);
+
+      line_set(&line, pt[0], pt[1]);
+      module_line(mod, &line);
+
+      // Wireframe: bottom circle
+      point_set3D(&pt[0], x1, 0.0, z1);
+      point_set3D(&pt[1], x2, 0.0, z2);
+
+      line_set(&line, pt[0], pt[1]);
+      module_line(mod, &line);
+
+      // Wireframe: side lines
+      point_set3D(&pt[0], x1, 0.0, z1);
+      point_set3D(&pt[1], x1, 1.0, z1);
+
+      line_set(&line, pt[0], pt[1]);
+      module_line(mod, &line);
+
+      point_set3D(&pt[0], x2, 0.0, z2);
+      point_set3D(&pt[1], x2, 1.0, z2);
+
+      line_set(&line, pt[0], pt[1]);
+      module_line(mod, &line);
+    }
+  }
+
+  polygon_clear(&p);
 }

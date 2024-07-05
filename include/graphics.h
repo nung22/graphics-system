@@ -11,6 +11,7 @@
 #include "matrix.h"
 #include "view.h"
 #include "drawstate.h"
+#include "bezier.h"
 #include "module.h"
 #include <math.h>
 
