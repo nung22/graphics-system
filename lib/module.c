@@ -296,10 +296,6 @@ void module_draw(Module *md, Matrix *VTM, Matrix *GTM, DrawState *ds, Lighting *
       matrix_identity(&LTM); // set LTM to identity
       break;
 
-    case ObjMatrix:
-      matrix_multiply(&(e->obj.matrix), &LTM, &LTM); // update LTM
-      break;
-
     case ObjModule:
     {
       DrawState tempDS;
