@@ -263,7 +263,7 @@ void module_draw(Module *md, Matrix *VTM, Matrix *GTM, DrawState *ds, Lighting *
       matrix_xformLine(VTM, &L);   // Transform by VTM
       line_normalize(&L);          // Normalize by the homogeneous coordinate
       printf("drawing line (%.2f %.2f) to (%.2f %.2f)\n",
-             L.a.val[0], L.a.val[1], L.b.val[0], L.b.val[1]);
+            L.a.val[0], L.a.val[1], L.b.val[0], L.b.val[1]);
       line_draw(&L, src, ds->color); // Draw the line
       break;
     }
@@ -671,6 +671,97 @@ void module_cylinder(Module *mod, int sides, int solid)
       line_set(&line, pt[0], pt[1]);
       module_line(mod, &line);
     }
+  }
+
+  polygon_clear(&p);
+}
+
+// Function to create a sphere
+void module_sphere(Module *md, int slices, int stacks, int solid)
+{
+  Polygon p;
+  Point pt[4];
+  int i, j;
+
+  polygon_init(&p);
+
+  for (i = 0; i < stacks; i++)
+  {
+    for (j = 0; j < slices; j++)
+    {
+      double phi1 = i * M_PI / stacks;
+      double phi2 = (i + 1) * M_PI / stacks;
+      double theta1 = j * 2 * M_PI / slices;
+      double theta2 = (j + 1) * 2 * M_PI / slices;
+
+      point_set3D(&pt[0], sin(phi1) * cos(theta1), cos(phi1), sin(phi1) * sin(theta1));
+      point_set3D(&pt[1], sin(phi2) * cos(theta1), cos(phi2), sin(phi2) * sin(theta1));
+      point_set3D(&pt[2], sin(phi2) * cos(theta2), cos(phi2), sin(phi2) * sin(theta2));
+      point_set3D(&pt[3], sin(phi1) * cos(theta2), cos(phi1), sin(phi1) * sin(theta2));
+
+      if (solid)
+      {
+        polygon_set(&p, 4, pt);
+        module_polygon(md, &p);
+      }
+      else
+      {
+        Line l;
+        line_set(&l, pt[0], pt[1]);
+        module_line(md, &l);
+        line_set(&l, pt[1], pt[2]);
+        module_line(md, &l);
+        line_set(&l, pt[2], pt[3]);
+        module_line(md, &l);
+        line_set(&l, pt[3], pt[0]);
+        module_line(md, &l);
+      }
+    }
+  }
+
+  polygon_clear(&p);
+}
+
+// Function to create a pyramid
+void module_pyramid(Module *md, int solid)
+{
+  Point base[4], apex;
+  Polygon p;
+  Line l;
+
+  point_set3D(&base[0], -1, 0, -1);
+  point_set3D(&base[1], 1, 0, -1);
+  point_set3D(&base[2], 1, 0, 1);
+  point_set3D(&base[3], -1, 0, 1);
+  point_set3D(&apex, 0, 1, 0);
+
+  polygon_init(&p);
+
+  // Create base
+  if (solid)
+  {
+    polygon_set(&p, 4, base);
+    module_polygon(md, &p);
+
+    // Create sides
+    for (int i = 0; i < 4; i++)
+    {
+      Point pts[3] = {base[i], base[(i + 1) % 4], apex};
+      polygon_set(&p, 3, pts);
+      module_polygon(md, &p);
+    }
+  }
+  else
+  {
+    for (int i = 0; i < 4; i++)
+    {
+      line_set(&l, base[i], base[(i + 1) % 4]);
+      module_line(md, &l);
+      line_set(&l, base[i], apex);
+      module_line(md, &l);
+    }
+    line_set(&l, base[3], base[0]);
+    module_line(md, &l);
   }
 
   polygon_clear(&p);
