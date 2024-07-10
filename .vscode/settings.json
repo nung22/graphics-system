@@ -3,6 +3,7 @@
   "files.associations": {
     "graphics.h": "c",
     "__locale": "c",
-    "matrix.h": "c"
+    "matrix.h": "c",
+    "stdlib.h": "c"
   }
 }
