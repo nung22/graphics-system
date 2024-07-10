@@ -26,16 +26,16 @@ LIBS = -lm -limageIO
 LFLAGS = -L$(LIBDIR) -L/usr/local/lib
 
 # put all of the relevant include files here
-_DEPS = ppmIO.h image.h color.h point.h line.h shape.h list.h polygon.h vector.h matrix.h view.h drawstate.h module.h graphics.h
+_DEPS = ppmIO.h image.h gif.h color.h point.h line.h shape.h list.h polygon.h vector.h matrix.h view.h drawstate.h bezier.h module.h graphics.h
 
 # convert them to point to the right place
 DEPS = $(patsubst %,$(INCDIR)/%,$(_DEPS))
 
 # put a list of the executables here
-EXECUTABLES = test6a test6b test6c test6d test6e
+EXECUTABLES = create-gif test7a test7b test7c lab7a lab7b lab7c lab7d lab7e lab7f
 
 # put a list of all the object files here for all executables (with .o endings)
-_OBJ = test6a.o test6b.o test6c.o test6d.o test6e.o
+_OBJ = create-gif.o test7a.o test7b.o test7c.o lab7a.o lab7b.o lab7c.o lab7d.o lab7e.o lab7f.o
 
 # convert them to point to the right place
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
@@ -58,21 +58,35 @@ all:
 
 # put the specific executable rules here
 
-test6a: $(ODIR)/test6a.o
+create-gif: $(ODIR)/create-gif.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test6b: $(ODIR)/test6b.o
+test7a: $(ODIR)/test7a.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test6c: $(ODIR)/test6c.o
+test7b: $(ODIR)/test7b.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test6d: $(ODIR)/test6d.o
+test7c: $(ODIR)/test7c.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test6e: $(ODIR)/test6e.o
+lab7a: $(ODIR)/lab7a.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
+lab7b: $(ODIR)/lab7b.o
+	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
+
+lab7c: $(ODIR)/lab7c.o
+	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
+
+lab7d: $(ODIR)/lab7d.o
+	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
+
+lab7e: $(ODIR)/lab7e.o
+	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
+
+lab7f: $(ODIR)/lab7f.o
+	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 .PHONY: clean
 

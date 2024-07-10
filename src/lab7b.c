@@ -1,4 +1,9 @@
-// test_sphere.c
+/*
+Nicholas Ung
+Summer 2024
+
+Draws two 3D spheres: one filled and one made of lines
+*/
 
 #include <stdio.h>
 #include <stdlib.h>

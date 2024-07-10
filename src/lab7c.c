@@ -1,4 +1,9 @@
-// test_pyramid.c
+/*
+Nicholas Ung
+Summer 2024
+
+Draws two 3D pyramids: one filled and one made of lines
+*/
 
 #include <stdio.h>
 #include <stdlib.h>

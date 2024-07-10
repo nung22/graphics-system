@@ -1,9 +1,8 @@
 /*
-	Bruce A Maxwell
-	Fall 2014
-	CS 351
+	Nicholas Ung
+  Summer 2024
 
-	Creates a pair of spinning Bezier surfaces
+	Creates a pair of solid spinning Bezier surfaces
 
 	Accepts one command line parameter, which is the number of
 	subdivisions to execute.

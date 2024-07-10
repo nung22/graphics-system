@@ -1,4 +1,4 @@
-# Lab 6: Hierarchical Modeling
+# Lab 7: Bezier Curves and Surfaces
 
 **Name:** Nicholas Ung
 
