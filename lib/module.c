@@ -481,18 +481,18 @@ void module_cube(Module *md, int solid)
 {
   Point pts[8];
 
-  // Define the vertices of the cube
-  point_set3D(&pts[0], -1, -1, -1);
-  point_set3D(&pts[1], 1, -1, -1);
-  point_set3D(&pts[2], 1, 1, -1);
-  point_set3D(&pts[3], -1, 1, -1);
-  point_set3D(&pts[4], -1, -1, 1);
-  point_set3D(&pts[5], 1, -1, 1);
-  point_set3D(&pts[6], 1, 1, 1);
-  point_set3D(&pts[7], -1, 1, 1);
 
-  if (solid)
-  {
+  // Define the vertices of the cube
+  point_set3D(&pts[0], -0.5, -0.5, -0.5);
+  point_set3D(&pts[1], 0.5, -0.5, -0.5);
+  point_set3D(&pts[2], 0.5, 0.5, -0.5);
+  point_set3D(&pts[3], -0.5, 0.5, -0.5);
+  point_set3D(&pts[4], -0.5, -0.5, 0.5);
+  point_set3D(&pts[5], 0.5, -0.5, 0.5);
+  point_set3D(&pts[6], 0.5, 0.5, 0.5);
+  point_set3D(&pts[7], -0.5, 0.5, 0.5);
+
+  if (solid) {
     Polygon p;
     Vector normals[6];
     polygon_init(&p);
@@ -506,48 +506,38 @@ void module_cube(Module *md, int solid)
     vector_set(&normals[5], 1, 0, 0);  // Right face
 
     // Front face
-    polygon_set(&p, 4, &(pts[0]));
+    Point front_face_pts[] = {pts[0], pts[1], pts[2], pts[3]};
+    polygon_set(&p, 4, front_face_pts);
     polygon_setNormals(&p, p.nVertex, &normals[0]);
     module_polygon(md, &p);
 
     // Back face
-    polygon_set(&p, 4, &(pts[4]));
+    Point back_face_pts[] = {pts[4], pts[5], pts[6], pts[7]};
+    polygon_set(&p, 4, back_face_pts);
     polygon_setNormals(&p, p.nVertex, &normals[1]);
     module_polygon(md, &p);
 
     // Top face
-    point_set3D(&pts[0], -1, 1, -1);
-    point_set3D(&pts[1], 1, 1, -1);
-    point_set3D(&pts[2], 1, 1, 1);
-    point_set3D(&pts[3], -1, 1, 1);
-    polygon_set(&p, 4, &(pts[0]));
+    Point top_face_pts[] = {pts[3], pts[2], pts[6], pts[7]};
+    polygon_set(&p, 4, top_face_pts);
     polygon_setNormals(&p, p.nVertex, &normals[2]);
     module_polygon(md, &p);
 
     // Bottom face
-    point_set3D(&pts[0], -1, -1, -1);
-    point_set3D(&pts[1], 1, -1, -1);
-    point_set3D(&pts[2], 1, -1, 1);
-    point_set3D(&pts[3], -1, -1, 1);
-    polygon_set(&p, 4, &(pts[0]));
+    Point bottom_face_pts[] = {pts[0], pts[1], pts[5], pts[4]};
+    polygon_set(&p, 4, bottom_face_pts);
     polygon_setNormals(&p, p.nVertex, &normals[3]);
     module_polygon(md, &p);
 
     // Left face
-    point_set3D(&pts[0], -1, -1, -1);
-    point_set3D(&pts[1], -1, 1, -1);
-    point_set3D(&pts[2], -1, 1, 1);
-    point_set3D(&pts[3], -1, -1, 1);
-    polygon_set(&p, 4, &(pts[0]));
+    Point left_face_pts[] = {pts[0], pts[3], pts[7], pts[4]};
+    polygon_set(&p, 4, left_face_pts);
     polygon_setNormals(&p, p.nVertex, &normals[4]);
     module_polygon(md, &p);
 
     // Right face
-    point_set3D(&pts[0], 1, -1, -1);
-    point_set3D(&pts[1], 1, 1, -1);
-    point_set3D(&pts[2], 1, 1, 1);
-    point_set3D(&pts[3], 1, -1, 1);
-    polygon_set(&p, 4, &(pts[0]));
+    Point right_face_pts[] = {pts[1], pts[2], pts[6], pts[5]};
+    polygon_set(&p, 4, right_face_pts);
     polygon_setNormals(&p, p.nVertex, &normals[5]);
     module_polygon(md, &p);
 
