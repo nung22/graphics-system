@@ -59,4 +59,8 @@ Mkfile.old
 dkms.conf
 
 # Folders to ignore
+
+# Ignore `bin` dir
 bin/
+# or
+*/bin/*
