@@ -17,6 +17,11 @@ typedef enum
   ShadePhong
 } ShadeMethod;
 
+// Structure to represent lighting
+typedef struct {
+  int nLights;
+} Lighting;
+
 // Structure to specify how an object is drawn into the image
 typedef struct
 {
