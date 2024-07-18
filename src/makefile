@@ -32,10 +32,10 @@ _DEPS = ppmIO.h image.h gif.h color.h point.h line.h shape.h list.h polygon.h ve
 DEPS = $(patsubst %,$(INCDIR)/%,$(_DEPS))
 
 # put a list of the executables here
-EXECUTABLES = create-gif test7a test7b test7c lab7a lab7b lab7c lab7d lab7e lab7f
+EXECUTABLES = test8a cubism spherism galaxy prisms
 
 # put a list of all the object files here for all executables (with .o endings)
-_OBJ = create-gif.o test7a.o test7b.o test7c.o lab7a.o lab7b.o lab7c.o lab7d.o lab7e.o lab7f.o
+_OBJ = test8a.o cubism.o spherism.o galaxy.o prisms.o
 
 # convert them to point to the right place
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
@@ -51,41 +51,24 @@ $(ODIR)/%.o: %.C $(DEPS)
 $(ODIR)/%.o: %.cpp $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-
 all:
 	for i in $(EXECUTABLES); do (make $$i) ; done
 
-
 # put the specific executable rules here
 
-create-gif: $(ODIR)/create-gif.o
+test8a: $(ODIR)/test8a.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test7a: $(ODIR)/test7a.o
+cubism: $(ODIR)/cubism.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test7b: $(ODIR)/test7b.o
+spherism : $(ODIR)/spherism.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test7c: $(ODIR)/test7c.o
+galaxy : $(ODIR)/galaxy.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-lab7a: $(ODIR)/lab7a.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-lab7b: $(ODIR)/lab7b.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-lab7c: $(ODIR)/lab7c.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-lab7d: $(ODIR)/lab7d.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-lab7e: $(ODIR)/lab7e.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-lab7f: $(ODIR)/lab7f.o
+prisms : $(ODIR)/prisms.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 .PHONY: clean
