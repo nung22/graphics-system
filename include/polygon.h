@@ -3,6 +3,7 @@
 #define POLYGON_H
 
 #include "vector.h"
+#include "drawstate.h"
 
 typedef struct
 {
@@ -32,6 +33,6 @@ void polygon_normalize(Polygon *p);
 void polygon_draw(Polygon *p, Image *src, Color c);
 void polygon_drawFill(Polygon *p, Image *src, Color c);
 void polygon_drawFillB(Polygon *p, Image *src, Color c);
-void polygon_drawFillAA(Polygon *p, Image *src, Color c);
+void polygon_drawShade(Polygon *p, Image *src, DrawState *ds, Lighting *lighting);
 
 #endif

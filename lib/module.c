@@ -277,14 +277,7 @@ void module_draw(Module *md, Matrix *VTM, Matrix *GTM, DrawState *ds, Lighting *
       matrix_xformPolygon(VTM, &P);      // transform by VTM
       polygon_normalize(&P);             // normalize by the homogeneous coordinate
       polygon_print(&P, stdout);         // print the polygon data
-      if (ds->shade == ShadeFrame)
-      {
-        polygon_draw(&P, src, ds->color); // draw the boundary of the polygon
-      }
-      else if (ds->shade == ShadeConstant)
-      {
-        polygon_drawFill(&P, src, ds->color); // draw the filled polygon
-      }
+      polygon_drawShade(&P, src, ds, lighting); // draw the polygon
       break;
     }
 
@@ -480,7 +473,6 @@ void module_bezierSurface(Module *m, BezierSurface *b, int divisions, int solid)
 void module_cube(Module *md, int solid)
 {
   Point pts[8];
-
 
   // Define the vertices of the cube
   point_set3D(&pts[0], -0.5, -0.5, -0.5);
