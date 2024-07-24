@@ -1,8 +1,8 @@
-# Lab 9: Lighting and Shading
+# Lab 8: Z-Buffer Rendering
 
 **Name:** Nicholas Ung
 
-**Using Time Travel Days:** No
+**Using Time Travel Days:** Yes, 3 Days
 
 **Operating System:** Mac
 

@@ -32,10 +32,10 @@ _DEPS = ppmIO.h image.h gif.h color.h point.h line.h shape.h list.h polygon.h ve
 DEPS = $(patsubst %,$(INCDIR)/%,$(_DEPS))
 
 # put a list of the executables here
-EXECUTABLES = test9a test9b test9c test9d test9e test9f test9g
+EXECUTABLES = test8a cubism spherism galaxy prisms
 
 # put a list of all the object files here for all executables (with .o endings)
-_OBJ = test9a.o test9b.o test9c.o test9d.o test9e.o test9f.o test9g.o
+_OBJ = test8a.o cubism.o spherism.o galaxy.o prisms.o
 
 # convert them to point to the right place
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
@@ -56,25 +56,19 @@ all:
 
 # put the specific executable rules here
 
-test9a: $(ODIR)/test9a.o
+test8a: $(ODIR)/test8a.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test9b: $(ODIR)/test9b.o
+cubism: $(ODIR)/cubism.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test9c: $(ODIR)/test9c.o
+spherism : $(ODIR)/spherism.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test9d: $(ODIR)/test9d.o
+galaxy : $(ODIR)/galaxy.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test9e: $(ODIR)/test9e.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-test9f: $(ODIR)/test9f.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-test9g: $(ODIR)/test9g.o
+prisms : $(ODIR)/prisms.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 .PHONY: clean
