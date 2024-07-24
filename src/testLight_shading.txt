@@ -1,0 +1,18 @@
+Testing ambient + point light with point light source on same side as normal
+LS: [ 0.000 1.000 0.000 1.000 ] 
+ambient light 0: 0.12 0.15 0.18
+point light 1: 0.33 0.42 0.50
+c: 0.33 0.42 0.50
+Testing ambient + point light with point light source opposite normal and 2-sided
+LS: [ 0.000 -1.000 0.000 1.000 ] 
+ambient light 0: 0.12 0.15 0.18
+point light 1: 0.33 0.42 0.50
+c: 0.33 0.42 0.50
+Testing ambient + point light with point light source opposite normal and 1-sided
+LS: [ 0.000 -1.000 0.000 1.000 ] 
+ambient light 0: 0.12 0.15 0.18
+c: 0.12 0.15 0.18
+Testing ambient + point with the light and view on opposite sides (2-sided)
+LS: [ 0.000 1.000 0.000 1.000 ] 
+ambient light 0: 0.12 0.15 0.18
+c: 0.12 0.15 0.18
