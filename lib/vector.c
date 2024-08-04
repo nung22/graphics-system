@@ -22,7 +22,7 @@ void vector_print(Vector *v, FILE *fp)
 // Copies the data from the source vector to the destination vector.
 void vector_copy(Vector *dest, Vector *src)
 {
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 4; i++)
   {
     dest->val[i] = src->val[i];
   }
@@ -60,4 +60,18 @@ void vector_cross(Vector *a, Vector *b, Vector *c)
   c->val[1] = a->val[2] * b->val[0] - a->val[0] * b->val[2];
   c->val[2] = a->val[0] * b->val[1] - a->val[1] * b->val[0];
   c->val[3] = 0.0; // Ensure the w component is zero for vectors
+}
+
+void vector_add(Vector *a, Vector *b, Vector *result) {
+    result->val[0] = a->val[0] + b->val[0];
+    result->val[1] = a->val[1] + b->val[1];
+    result->val[2] = a->val[2] + b->val[2];
+    result->val[3] = 0.0; // homogeneous coordinate for vectors
+}
+
+void vector_subtract(Vector *a, Vector *b, Vector *result) {
+    result->val[0] = a->val[0] - b->val[0];
+    result->val[1] = a->val[1] - b->val[1];
+    result->val[2] = a->val[2] - b->val[2];
+    result->val[3] = 0.0; // homogeneous coordinate for vectors
 }

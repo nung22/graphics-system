@@ -10,9 +10,11 @@
 #include "polygon.h"
 #include "matrix.h"
 #include "view.h"
+#include "lighting.h"
 #include "drawstate.h"
 #include "bezier.h"
 #include "module.h"
+#include "plyRead.h"
 #include <math.h>
 
 // Common constants

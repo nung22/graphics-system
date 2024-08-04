@@ -2,57 +2,39 @@
 	Bruce A. Maxwell
 	Fall 2013
 
-  Reads data from a PLY file
+	Reads data from a PLY file
 
-  Returns...
+	Returns...
 
-  a list of polygons (complete with surface normals)
-  a list of colors
+	a list of polygons (complete with surface normals)
+	a list of colors
 
-  Blender can export to PLY files (but doesn't seem to save colors)
+	Blender can export to PLY files (but doesn't seem to save colors)
 
 */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "graphics.h"
-
-typedef enum {
-	type_float32,
-	type_uint8,
-	type_int32,
-	type_list,
-	type_none
-} ply_type;
-
-typedef struct {
-	ply_type type;
-	ply_type listCardType;
-	ply_type listDataType;
-	char name[32];
-	void *next;
-} ply_property;
-
-ply_type plyType(char *buffer);
-ply_type plyType(char *buffer) {
-	if(!strcmp(buffer, "float32"))
-		return(type_float32);
-  
-	if(!strcmp(buffer, "uint8"))
-		return(type_uint8);
-
-	if(!strcmp(buffer, "int32"))
-		return(type_int32);
-
-	if(!strcmp(buffer, "list"))
-		return(type_list);
-  
-	return(type_none);
-}
+#include "plyRead.h"
 
 #define MaxVertices (10)
 
-int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int estNormals) {
+ply_type plyType(char *buffer)
+{
+	if (!strcmp(buffer, "float32"))
+		return (type_float32);
+
+	if (!strcmp(buffer, "uint8"))
+		return (type_uint8);
+
+	if (!strcmp(buffer, "int32"))
+		return (type_int32);
+
+	if (!strcmp(buffer, "list"))
+		return (type_list);
+
+	return (type_none);
+}
+
+int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int estNormals)
+{
 	char buffer[256];
 	Point *vertex;
 	Vector *normal;
@@ -91,93 +73,110 @@ int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int
 
 	int doneWithHeader = 0;
 	FILE *fp = fopen(filename, "r");
-	if(fp) {
+	if (fp)
+	{
 		// check if it's a .ply file
 		fscanf(fp, "%s", buffer);
-		if(strcmp(buffer, "ply")) {
+		if (strcmp(buffer, "ply"))
+		{
 			printf("%s doesn't look like a .ply file\n", filename);
 			fclose(fp);
-			return(-1);
+			return (-1);
 		}
 
-		while(!doneWithHeader) {
+		while (!doneWithHeader)
+		{
 			fscanf(fp, "%s", buffer);
-			switch(buffer[0]) {
+			switch (buffer[0])
+			{
 			case 'f':
 				// format statement
-				for(;fgetc(fp) != '\n';);
+				for (; fgetc(fp) != '\n';)
+					;
 				break;
-	
+
 			case 'c':
 				// comment
-				for(;fgetc(fp) != '\n';);
+				for (; fgetc(fp) != '\n';)
+					;
 				break;
 
 			case 'p':
 				// property statement
-			{
-				ply_property *prop = malloc(sizeof(ply_property));
-				prop->listCardType = type_none;
-				prop->listDataType = type_none;
-				prop->next = NULL;
+				{
+					ply_property *prop = malloc(sizeof(ply_property));
+					prop->listCardType = type_none;
+					prop->listDataType = type_none;
+					prop->next = NULL;
 
-				fscanf(fp, "%s", buffer); // get the data type
-				prop->type = plyType(buffer);
-				if(prop->type == type_list) {
-					fscanf(fp, "%s", buffer); // get the first data type
-					prop->listCardType = plyType(buffer);
-					fscanf(fp, "%s", buffer); // get the first data type
-					prop->listDataType = plyType(buffer);
-				}
-				else if(prop->type == type_none) {
-					printf("Unrecognized property type %s", buffer);
-					fclose(fp);
-					return(-1);
-				}
-				printf("Read property type %d\n", prop->type);
+					fscanf(fp, "%s", buffer); // get the data type
+					prop->type = plyType(buffer);
+					if (prop->type == type_list)
+					{
+						fscanf(fp, "%s", buffer); // get the first data type
+						prop->listCardType = plyType(buffer);
+						fscanf(fp, "%s", buffer); // get the first data type
+						prop->listDataType = plyType(buffer);
+					}
+					else if (prop->type == type_none)
+					{
+						printf("Unrecognized property type %s", buffer);
+						fclose(fp);
+						return (-1);
+					}
+					printf("Read property type %d\n", prop->type);
 
-				fscanf(fp, "%s", prop->name);
-				printf("Read property name %s\n", prop->name);
+					fscanf(fp, "%s", prop->name);
+					printf("Read property name %s\n", prop->name);
 
-				// add the property entry to the list
-				if(vertexProp) {
-					if(vertexproplist == NULL) {
-						vertexproplist = prop;
-						vertexproptail = prop;
+					// add the property entry to the list
+					if (vertexProp)
+					{
+						if (vertexproplist == NULL)
+						{
+							vertexproplist = prop;
+							vertexproptail = prop;
+						}
+						else
+						{
+							vertexproptail->next = prop;
+							vertexproptail = prop;
+						}
 					}
-					else {
-						vertexproptail->next = prop;
-						vertexproptail = prop;
+					else if (faceProp)
+					{
+						if (faceproplist == NULL)
+						{
+							faceproplist = prop;
+							faceproptail = prop;
+						}
+						else
+						{
+							faceproptail->next = prop;
+							faceproptail = prop;
+						}
 					}
 				}
-				else if(faceProp) {
-					if(faceproplist == NULL) {
-						faceproplist = prop;
-						faceproptail = prop;
-					}
-					else {
-						faceproptail->next = prop;
-						faceproptail = prop;
-					}
-				}
-			}
-			break;
+				break;
 
 			case 'e':
-				if(!strcmp(buffer, "end_header")) {
+				if (!strcmp(buffer, "end_header"))
+				{
 					doneWithHeader = 1;
 					break;
 				}
 
 				// otherwise it's an element statement
 				fscanf(fp, "%s", buffer);
-				if(!strcmp(buffer, "vertex")) {
+				if (!strcmp(buffer, "vertex"))
+				{
 					printf("Read element vertex\n");
 					vertexProp = 1;
 					faceProp = 0;
 					fscanf(fp, "%d", &numVertex);
 				}
-				else if(!strcmp(buffer, "face")) {
+				else if (!strcmp(buffer, "face"))
+				{
 					printf("Read element face\n");
 					faceProp = 1;
 					vertexProp = 0;
@@ -186,7 +185,8 @@ int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int
 				break;
 
 			default: // don't know what to do with it
-				for(;fgetc(fp) != '\n';);
+				for (; fgetc(fp) != '\n';)
+					;
 				break;
 			}
 		}
@@ -197,19 +197,21 @@ int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int
 		color = malloc(sizeof(Color) * numVertex); // apparently not written by Blender
 
 		// read the vertices
-		for(i=0;i<numVertex;i++) {
-			for(j=0;j<3;j++)
-				fscanf(fp, "%f", &(vertex[i].val[j]));
+		for (i = 0; i < numVertex; i++)
+		{
+			for (j = 0; j < 3; j++)
+				fscanf(fp, "%lf", &(vertex[i].val[j]));
 			vertex[i].val[3] = 1.0;
 
-			for(j=0;j<3;j++)
-				fscanf(fp, "%f", &(normal[i].val[j]));
+			for (j = 0; j < 3; j++)
+				fscanf(fp, "%lf", &(normal[i].val[j]));
 			normal[i].val[3] = 0.0;
 
-			for(j=0;j<2;j++)
+			for (j = 0; j < 2; j++)
 				fscanf(fp, "%*f");
-      
-			for(j=0;j<3;j++) {
+
+			for (j = 0; j < 3; j++)
+			{
 				fscanf(fp, "%f", &(color[i].c[j]));
 				color[i].c[j] /= 255.0;
 			}
@@ -219,19 +221,22 @@ int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int
 		*clist = malloc(sizeof(Color) * numPoly);
 
 		// read the faces and build the polygons
-		for(i=0;i<numPoly;i++) {
+		for (i = 0; i < numPoly; i++)
+		{
 			polygon_init(&(p[i]));
 
 			// read in the vertex indices
 			nv = 0;
 			fscanf(fp, "%d", &nv);
 
-			if(nv > MaxVertices) {
+			if (nv > MaxVertices)
+			{
 				printf("Number of vertices is greater than MaxVertices (%d), terminating\n", nv);
 				exit(-1);
 			}
 
-			for(j=0;j<nv;j++) {
+			for (j = 0; j < nv; j++)
+			{
 				fscanf(fp, "%d", &(vid[j]));
 			}
 
@@ -239,15 +244,17 @@ int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int
 			// not setting vertexWorld right now, because no Phong shading
 
 			p[i].nVertex = nv;
-//			p[i].zBufferFlag = 1;
-			p[i].normal = malloc(sizeof(Vector)*nv);
-			p[i].vertex = malloc(sizeof(Point)*nv);
+			//			p[i].zBufferFlag = 1;
+			p[i].normal = malloc(sizeof(Vector) * nv);
+			p[i].vertex = malloc(sizeof(Point) * nv);
 			tcolor.c[0] = tcolor.c[1] = tcolor.c[2] = 0.0;
 			//      printf("%d: ", nv);
-			for(j=0;j<nv;j++) {
+			for (j = 0; j < nv; j++)
+			{
 				//	printf("%d  ", vid[j]);
 				p[i].vertex[j] = vertex[vid[j]];
-				if(!estNormals) {
+				if (!estNormals)
+				{
 					p[i].normal[j] = normal[vid[j]];
 				}
 				tcolor.c[0] += color[vid[j]].c[0];
@@ -258,7 +265,8 @@ int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int
 			tcolor.c[1] /= (float)nv;
 			tcolor.c[2] /= (float)nv;
 
-			if(estNormals) {
+			if (estNormals)
+			{
 				Vector tx, ty, tn;
 
 				tx.val[0] = p[i].vertex[0].val[0] - p[i].vertex[1].val[0];
@@ -272,10 +280,10 @@ int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int
 				vector_cross(&tx, &ty, &tn);
 				vector_normalize(&tn);
 
-				for(j=0;j<nv;j++)
+				for (j = 0; j < nv; j++)
 					p[i].normal[j] = tn;
 			}
-      
+
 			printf("(%.2f %.2f %.2f)\n", tcolor.c[0], tcolor.c[1], tcolor.c[2]);
 
 			(*clist)[i] = tcolor;
@@ -292,13 +300,15 @@ int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int
 		{
 			ply_property *q;
 
-			while(vertexproplist != NULL) {
+			while (vertexproplist != NULL)
+			{
 				q = (ply_property *)vertexproplist->next;
 				free(vertexproplist);
 				vertexproplist = q;
 			}
 
-			while(faceproplist != NULL) {
+			while (faceproplist != NULL)
+			{
 				q = (ply_property *)faceproplist->next;
 				free(faceproplist);
 				faceproplist = q;
@@ -307,10 +317,11 @@ int readPLY(char filename[], int *nPolygons, Polygon **plist, Color **clist, int
 
 		fclose(fp);
 	}
-	else {
+	else
+	{
 		printf("Unable to open %s\n", filename);
-		return(-1);
+		return (-1);
 	}
 
-	return(0);
+	return (0);
 }

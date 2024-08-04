@@ -113,7 +113,15 @@ void matrix_xformPoint(Matrix *m, Point *p, Point *q)
 // Transform the vector by the matrix
 void matrix_xformVector(Matrix *m, Vector *v, Vector *q)
 {
-  matrix_xformPoint(m, (Point *)v, (Point *)q);
+  Vector temp;
+  vector_copy(&temp, q);
+  for (int i = 0; i < 4; i++) {
+    temp.val[i] = 0.0;
+    for (int j = 0; j < 4; j++) {
+      temp.val[i] += m->m[i][j] * v->val[j];
+    }
+  }
+  vector_copy(q, &temp);
 }
 
 // Transform the polygon by the matrix
@@ -122,8 +130,11 @@ void matrix_xformPolygon(Matrix *m, Polygon *p)
   for (int i = 0; i < p->nVertex; i++)
   {
     Point transformedPoint;
+    Vector transformedNormal;
     matrix_xformPoint(m, &(p->vertex[i]), &transformedPoint);
     point_copy(&(p->vertex[i]), &transformedPoint);
+    matrix_xformVector(m, &(p->normal[i]), &transformedNormal);
+    vector_copy(&(p->normal[i]), &transformedNormal);
   }
 }
 

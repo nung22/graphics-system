@@ -12,13 +12,8 @@ Polygon *polygon_create(void)
 {
   Polygon *p = (Polygon *)malloc(sizeof(Polygon)); // Allocate memory for the polygon structure
   if (p)
-  {                   // Check if the polygon pointer is not NULL
-    p->nVertex = 0;   // Set the number of vertices to 0
-    p->vertex = NULL; // Set the vertex pointer to NULL
-    p->color = NULL;  // Set the color pointer to NULL
-    p->normal = NULL; // Set the normal pointer to NULL
-    p->zBuffer = 0;   // Set the zBuffer flag to 0
-    p->oneSided = 1;  // Set the oneSided flag to 1
+  {                  // Check if the polygon pointer is not NULL
+    polygon_init(p); // Initialize the polygon
   }
   return p; // Return the polygon pointer
 }
@@ -52,12 +47,12 @@ void polygon_free(Polygon *p)
 // Initializes the existing Polygon to an empty Polygon.
 void polygon_init(Polygon *p)
 {
-  p->nVertex = 0;
-  p->vertex = NULL;
-  p->color = NULL;
-  p->normal = NULL;
-  p->zBuffer = 1;
-  p->oneSided = 1;
+  p->nVertex = 0;   // Set the number of vertices to 0
+  p->vertex = NULL; // Set the vertex list to NULL
+  p->color = NULL;  // Set the color list to NULL
+  p->normal = NULL; // Set the normal list to NULL
+  p->zBuffer = 0;   // Set the z-buffer flag to 0
+  p->oneSided = 0;  // Set the one-sided flag to 0
 }
 
 // Initializes the vertex array to the points in vlist.
@@ -65,13 +60,11 @@ void polygon_set(Polygon *p, int numV, Point *vlist)
 {
   if (p)
   {
-    // if (p->vertex)
-    //   free(p->vertex);
     p->nVertex = numV;
     p->vertex = (Point *)malloc(numV * sizeof(Point));
     for (int i = 0; i < numV; i++)
     {
-      p->vertex[i] = vlist[i];
+      point_copy(&p->vertex[i], &vlist[i]);
     }
   }
 }
@@ -116,10 +109,14 @@ void polygon_setColors(Polygon *p, int numV, Color *clist)
 {
   if (p)
   {
+    if (p->color)
+    {
+      free(p->color);
+    }
     p->color = (Color *)malloc(numV * sizeof(Color));
     for (int i = 0; i < numV; i++)
     {
-      p->color[i] = clist[i];
+      color_copy(&p->color[i], &clist[i]);
     }
   }
 }
@@ -132,7 +129,7 @@ void polygon_setNormals(Polygon *p, int numV, Vector *nlist)
     p->normal = (Vector *)malloc(numV * sizeof(Vector));
     for (int i = 0; i < numV; i++)
     {
-      p->normal[i] = nlist[i];
+      vector_copy(&p->normal[i], &nlist[i]);
     }
   }
 }
@@ -186,6 +183,18 @@ void polygon_print(Polygon *p, FILE *fp)
       fprintf(fp, "  ");
       point_print(&p->vertex[i], fp);
     }
+    fprintf(fp, "Normals\n");
+    for (int i = 0; i < p->nVertex; i++)
+    {
+      fprintf(fp, "  ");
+      point_print(&p->normal[i], fp);
+    }
+    for (int i = 0; i < p->nVertex; i++)
+    {
+      printf("Gouraud shade: %.2f %.2f %.2f\n", p->color[i].c[0], p->color[i].c[1], p->color[i].c[2]);
+    }
+
+
   }
 }
 
@@ -229,121 +238,151 @@ Scanline Fill Algorithm
 ********************/
 
 // Structure for storing edge information
-typedef struct tEdge {
+typedef struct tEdge
+{
   float x0, y0;                // Start point coordinates
   float x1, y1;                // End point coordinates
   float z0, z1;                // Z values at start and end points
   int yStart, yEnd;            // Start and end row for the edge
   float xIntersect, dxPerScan; // X intersection and its change per scanline
   float zIntersect, dzPerScan; // Z intersection and its change per scanline
+  Color cIntersect, dcPerScan; // Color intersection and its change per scanline
   struct tEdge *next;          // Pointer to the next edge
 } Edge;
 
 // Compare edges by yStart for sorting
-static int compYStart(const void *a, const void *b) {
+static int compYStart(const void *a, const void *b)
+{
   Edge *ea = (Edge *)a;
   Edge *eb = (Edge *)b;
   return (ea->yStart - eb->yStart);
 }
 
 // Compare edges by xIntersect for sorting
-static int compXIntersect(const void *a, const void *b) {
+static int compXIntersect(const void *a, const void *b)
+{
   Edge *ea = (Edge *)a;
   Edge *eb = (Edge *)b;
-  if (ea->xIntersect < eb->xIntersect) return -1;
-  else if (ea->xIntersect > eb->xIntersect) return 1;
+  if (ea->xIntersect < eb->xIntersect)
+    return -1;
+  else if (ea->xIntersect > eb->xIntersect)
+    return 1;
   return 0;
 }
 
 // Create an edge structure from start to end points, considering depth and clipping
-static Edge *makeEdgeRec(Point start, Point end, Image *src, DrawState *ds) {
-    Edge *edge;
-    float dscan = end.val[1] - start.val[1];
+static Edge *makeEdgeRec(Point start, Point end, Color c0, Color c1, Image *src, DrawState *ds)
+{
+  Edge *edge;
+  float dscan = end.val[1] - start.val[1];
 
-    // Clip vertices to the vertical bounds of the image
-    // BAM never modify the start and end values, only modify the edge rec values
-    // BAM you lose the ability to properly clip the upper plane if you do this
-    // BAM ditch these four lines
-    // if (start.val[1] < 0) start.val[1] = 0;
-    // if (end.val[1] < 0) end.val[1] = 0;
-    // if (start.val[1] >= src->rows) start.val[1] = src->rows - 1;
-    // if (end.val[1] >= src->rows) end.val[1] = src->rows - 1;
+  // BAM you can check for lines that end < 0 and lines that start >= src->rows and return NULL
+  // If both vertices are outside the vertical bounds, skip this edge
+  if (start.val[1] == end.val[1] || start.val[1] < 0 || end.val[1] < 0 || start.val[1] >= src->rows || end.val[1] >= src->rows)
+  {
+    return NULL;
+  }
 
-    // BAM you can check for lines that end < 0 and lines that start >= src->rows and return NULL
+  edge = (Edge *)malloc(sizeof(Edge));
+  edge->x0 = start.val[0];
+  edge->y0 = start.val[1];
+  edge->x1 = end.val[0];
+  edge->y1 = end.val[1];
+  edge->z0 = 1.0 / start.val[2];
+  edge->z1 = 1.0 / end.val[2];
+  edge->yStart = (int)(start.val[1] + 0.5);
+  edge->yEnd = (int)(end.val[1] + 0.5) - 1;
 
-    // If both vertices are outside the vertical bounds, skip this edge
-    if (start.val[1] == end.val[1] || start.val[1] < 0 || end.val[1] < 0 || start.val[1] >= src->rows || end.val[1] >= src->rows) {
-        return NULL;
+  if (edge->yEnd >= src->rows)
+  {
+    edge->yEnd = src->rows - 1;
+  }
+
+  edge->dxPerScan = (end.val[0] - start.val[0]) / dscan;
+  edge->dzPerScan = (edge->z1 - edge->z0) / dscan;
+
+  edge->xIntersect = edge->x0 + edge->dxPerScan * ((float)(edge->yStart) + 0.5 - edge->y0);
+  edge->zIntersect = edge->z0 + edge->dzPerScan * ((float)(edge->yStart) + 0.5 - edge->y0);
+
+  // Initialize color interpolation fields
+  for (int i = 0; i < 3; i++)
+  {
+    edge->dcPerScan.c[i] = (c1.c[i] / end.val[2] - c0.c[i] / start.val[2]) / dscan;
+    edge->cIntersect.c[i] = c0.c[i] / start.val[2] + edge->dcPerScan.c[i] * ((float)(edge->yStart) + 0.5 - edge->y0);
+  }
+
+  if (edge->y0 < 0)
+  { // BAM this would never execute given the initial clipping, but should work once they're gone
+    edge->xIntersect += edge->dxPerScan * ((float)(-edge->y0));
+    edge->zIntersect += edge->dzPerScan * ((float)(-edge->y0));
+    for (int i = 0; i < 3; i++)
+    {
+      edge->cIntersect.c[i] += edge->dcPerScan.c[i] * ((float)(-edge->y0));
     }
+    edge->y0 = 0;
+  }
 
-    edge = (Edge *)malloc(sizeof(Edge));
-    edge->x0 = start.val[0];
-    edge->y0 = start.val[1];
-    edge->x1 = end.val[0];
-    edge->y1 = end.val[1];
-    edge->z0 = 1.0 / start.val[2];
-    edge->z1 = 1.0 / end.val[2];
-    edge->yStart = (int)(start.val[1] + 0.5);
-    edge->yEnd = (int)(end.val[1] + 0.5) - 1;
-
-    if (edge->yEnd >= src->rows) {
-        edge->yEnd = src->rows - 1;
+  // Checking for very bad edges is more subtle
+  // If dxPerScan is positive and xIntersect > edge x1 or if dxPerScan is negative and xIntersect < edge x1, then set xIntersect to edge x1
+  if ((edge->dxPerScan > 0.0 && edge->xIntersect > edge->x1) || (edge->dxPerScan < 0.0 && edge->xIntersect < edge->x1))
+  {
+    edge->xIntersect = edge->x1;
+    edge->zIntersect = edge->z1;
+    for (int i = 0; i < 3; i++)
+    {
+      edge->cIntersect.c[i] = c1.c[i] / edge->z1;
     }
+  }
 
-    edge->dxPerScan = (end.val[0] - start.val[0]) / dscan;
-    edge->dzPerScan = (edge->z1 - edge->z0) / dscan;
-    edge->xIntersect = edge->x0 + edge->dxPerScan * ((float)(edge->yStart) + 0.5 - edge->y0);
-    edge->zIntersect = edge->z0 + edge->dzPerScan * ((float)(edge->yStart) + 0.5 - edge->y0);
-
-    if (edge->y0 < 0) { // BAM this would never execute given the initial clipping, but should work once they're gone
-        edge->xIntersect += edge->dxPerScan * ((float)(-edge->y0));
-        edge->zIntersect += edge->dzPerScan * ((float)(-edge->y0));
-        edge->y0 = 0;
-    }
-
-
-    // checking for very bad edges is more subtle.  If dxPerScan is positive and xIntersect > edge x1, then set xIntersect to edge->x1.  if dxPerScan is negative and xIntersect < edge x1, then set xIntersect to edge x1.
-    if (edge->dxPerScan > 0.0 && edge->xIntersect > edge->x1) {
-        edge->xIntersect = edge->x1;
-        edge->zIntersect = edge->z1;
-    } else if (edge->dxPerScan < 0.0 && edge->xIntersect < edge->x1) {
-        edge->xIntersect = edge->x1;
-        edge->zIntersect = edge->z1;
-    }
-
-    return edge;
+  return edge;
 }
 
 // Create a sorted edge list from the polygon vertices
-static LinkedList *setupEdgeList(Polygon *p, Image *src, DrawState *ds) {
-  LinkedList *edges = ll_new();   // Create new linked list for edges
+static LinkedList *setupEdgeList(Polygon *p, Image *src, DrawState *ds)
+{
+  LinkedList *edges = ll_new(); // Create new linked list for edges
   Point v1, v2;
+  Color c1, c2;
   int i;
 
   v1 = p->vertex[p->nVertex - 1]; // Start with the last vertex
+  if (p->color)
+    c1 = p->color[p->nVertex - 1]; // Start with the last color
 
-  for (i = 0; i < p->nVertex; i++) {
+  for (i = 0; i < p->nVertex; i++)
+  {
     v2 = p->vertex[i]; // Get current vertex
+    c2 = p->color[i];  // Get current color
 
     // Clip vertices to image vertical bounds
-    if (v1.val[1] < 0 && v2.val[1] >= 0) v1.val[1] = 0;
-    if (v1.val[1] >= 0 && v2.val[1] < 0) v2.val[1] = 0;
-    if (v1.val[1] >= src->rows && v2.val[1] < src->rows) v1.val[1] = src->rows - 1;
-    if (v1.val[1] < src->rows && v2.val[1] >= src->rows) v2.val[1] = src->rows - 1;
+    if (v1.val[1] < 0)
+      v1.val[1] = 0;
+    if (v2.val[1] < 0)
+      v2.val[1] = 0;
+    if (v1.val[1] >= src->rows)
+      v1.val[1] = src->rows - 1;
+    if (v2.val[1] >= src->rows)
+      v2.val[1] = src->rows - 1;
 
     // Create edge if not horizontal
-    if ((int)(v1.val[1] + 0.5) != (int)(v2.val[1] + 0.5)) {
+    if ((int)(v1.val[1]) != (int)(v2.val[1]))
+    {
       Edge *edge;
-      if (v1.val[1] < v2.val[1]) edge = makeEdgeRec(v1, v2, src, ds);
-      else edge = makeEdgeRec(v2, v1, src, ds);
-      if (edge) ll_insert(edges, edge, compYStart);
+      if (v1.val[1] < v2.val[1])
+        edge = makeEdgeRec(v1, v2, c1, c2, src, ds);
+      else
+        edge = makeEdgeRec(v2, v1, c2, c1, src, ds);
+      if (edge)
+        ll_insert(edges, edge, compYStart);
     }
 
     v1 = v2; // Move to the next vertex
+    c1 = c2; // Move to the next color
   }
 
   // Delete empty edge list
-  if (ll_empty(edges)) {
+  if (ll_empty(edges))
+  {
     ll_delete(edges, NULL);
     edges = NULL;
   }
@@ -352,80 +391,119 @@ static LinkedList *setupEdgeList(Polygon *p, Image *src, DrawState *ds) {
 }
 
 // Draw one scanline of a polygon
-static void fillScan(int scan, LinkedList *active, Image *src, DrawState *ds, Lighting *lighting) {
+static void fillScan(int scan, LinkedList *active, Image *src, DrawState *ds, Lighting *lighting)
+{
   Edge *p1, *p2;
   int i, f;
 
   p1 = ll_head(active);
 
-  while (p1) {
+  while (p1)
+  {
     p2 = ll_next(active);
 
-    if (!p2) {
+    if (!p2)
+    {
       printf("Edges not in pairs\n");
       break;
     }
 
-    if (p2->xIntersect == p1->xIntersect) {
+    if (p2->xIntersect == p1->xIntersect)
+    {
       p1 = ll_next(active);
       continue;
     }
 
     i = (int)(p1->xIntersect);
-    if (i < 0) i = 0;
+    if (i < 0)
+      i = 0;
 
     f = (int)(p2->xIntersect);
-    if (f >= src->cols) f = src->cols - 1;
+    if (f >= src->cols)
+      f = src->cols - 1;
 
     float curZ = p1->zIntersect;
     float dzPerColumn = (p2->zIntersect - p1->zIntersect) / (p2->xIntersect - p1->xIntersect);
 
-    if ((int)(p1->xIntersect - 0.5) < 0) {
-      curZ += dzPerColumn * (-p1->xIntersect);
+    // Initialize and calculate the interpolated color per column
+    Color curColor =  p1->cIntersect;
+    Color dColorPerColumn;
+    for (int k = 0; k < 3; k++)
+    {
+      dColorPerColumn.c[k] = (p2->cIntersect.c[k] - p1->cIntersect.c[k]) / (p2->xIntersect - p1->xIntersect);
     }
 
-    for (; i <= f; i++) {
+    if ((int)(p1->xIntersect - 0.5) < 0)
+    {
+      curZ += dzPerColumn * (-p1->xIntersect);
+      for (int k = 0; k < 3; k++)
+      {
+        curColor.c[k] += dColorPerColumn.c[k] * (-p1->xIntersect);
+      }
+    }
+
+
+    for (; i <= f; i++)
+    {
       float avgZ = (p1->zIntersect + p2->zIntersect) / 2;
-      if (curZ > image_getz(src, scan, i) && curZ - 0.0001 * avgZ > image_getz(src, scan, i) && curZ < 1000) {
+      if (curZ > image_getz(src, scan, i) && curZ - 0.0001 * avgZ > image_getz(src, scan, i) && curZ < 1000)
+      {
         image_setz(src, scan, i, curZ);
 
-        Color blendedColor = ds->color;
-        if (ds->shade == ShadeDepth) {
-          float depthColorValue = 1.0 - (1.0 / curZ);
-          blendedColor.c[0] *= depthColorValue;
-          blendedColor.c[1] *= depthColorValue;
-          blendedColor.c[2] *= depthColorValue;
+        // Compute the actual color by multiplying by the depth value
+        Color finalColor;
+        for (int k = 0; k < 3; k++)
+        {
+          finalColor.c[k] = curColor.c[k] / curZ;
         }
 
-        image_setColor(src, scan, i, blendedColor);
+        image_setColor(src, scan, i, finalColor);
       }
       curZ += dzPerColumn;
+      for (int k = 0; k < 3; k++)
+      {
+        curColor.c[k] += dColorPerColumn.c[k];
+      }
     }
     p1 = ll_next(active);
   }
 }
 
 // Update the active edge list for the next scanline
-static void updateActiveList(LinkedList *active, int scan) {
+static void updateActiveList(LinkedList *active, int scan)
+{
   LinkedList *tmplist = ll_new();
   Edge *tedge;
 
-  for (tedge = ll_pop(active); tedge != NULL; tedge = ll_pop(active)) {
-    if (tedge->yEnd > scan) {
+  for (tedge = ll_pop(active); tedge != NULL; tedge = ll_pop(active))
+  {
+    if (tedge->yEnd > scan)
+    {
       tedge->xIntersect += tedge->dxPerScan;
       tedge->zIntersect += tedge->dzPerScan;
-      if (tedge->dxPerScan < 0.0 && tedge->xIntersect < tedge->x1) {
-        tedge->xIntersect = tedge->x1;
-        tedge->zIntersect = 1.0 / tedge->z1;
-      } else if (tedge->dxPerScan > 0.0 && tedge->xIntersect > tedge->x1) {
-        tedge->xIntersect = tedge->x1;
-        tedge->zIntersect = 1.0 / tedge->z1;
+      // **New**: Update color interpolation
+      for (int k = 0; k < 3; k++)
+      {
+        tedge->cIntersect.c[k] += tedge->dcPerScan.c[k];
       }
+
+      if ((tedge->dxPerScan < 0.0 && tedge->xIntersect < tedge->x1) || (tedge->dxPerScan > 0.0 && tedge->xIntersect > tedge->x1))
+      {
+        tedge->xIntersect = tedge->x1;
+        tedge->zIntersect = 1.0 / tedge->z1;
+        // **New**: Update color interpolation
+        for (int k = 0; k < 3; k++)
+        {
+          tedge->cIntersect.c[k] += tedge->dcPerScan.c[k];
+        }
+      }
+
       ll_insert(tmplist, tedge, compXIntersect);
     }
   }
 
-  while ((tedge = ll_pop(tmplist)) != NULL) {
+  while ((tedge = ll_pop(tmplist)) != NULL)
+  {
     ll_insert(active, tedge, compXIntersect);
   }
 
@@ -433,20 +511,24 @@ static void updateActiveList(LinkedList *active, int scan) {
 }
 
 // Process the edge list and fill polygons using the scanline algorithm
-static int processEdgeList(LinkedList *edges, Image *src, DrawState *ds, Lighting *lighting) {
+static int processEdgeList(LinkedList *edges, Image *src, DrawState *ds, Lighting *lighting)
+{
   LinkedList *active = ll_new();
   Edge *current;
   int scan = 0;
 
   current = ll_head(edges);
 
-  for (scan = current->yStart; scan < src->rows; scan++) {
-    while (current != NULL && current->yStart == scan) {
+  for (scan = current->yStart; scan < src->rows; scan++)
+  {
+    while (current != NULL && current->yStart == scan)
+    {
       ll_insert(active, current, compXIntersect);
       current = ll_next(edges);
     }
 
-    if (ll_empty(active)) {
+    if (ll_empty(active))
+    {
       break;
     }
 
@@ -458,16 +540,38 @@ static int processEdgeList(LinkedList *edges, Image *src, DrawState *ds, Lightin
   return 0;
 }
 
+// Shading function for polygons
+void polygon_shade(Polygon *p, DrawState *ds, Lighting *lighting)
+{
+  if (p && ds && lighting)
+  {
+    if (!p->color)
+    {
+      p->color = (Color *)malloc(p->nVertex * sizeof(Color));
+    }
+
+    for (int i = 0; i < p->nVertex; i++)
+    {
+      Vector temp;
+      vector_subtract(&ds->viewer, &p->vertex[i], &temp);
+      lighting_shading(lighting, &p->normal[i], &temp, &p->vertex[i], &ds->body, &ds->surface, ds->surfaceCoeff, p->oneSided, &p->color[i]);
+    }
+  }
+}
+
 // Draw a filled polygon with shading using the scanline z-buffer algorithm
-void polygon_drawShade(Polygon *p, Image *src, DrawState *ds, Lighting *lighting) {
+void polygon_drawShade(Polygon *p, Image *src, DrawState *ds, Lighting *lighting)
+{
   LinkedList *edges = setupEdgeList(p, src, ds);
-  if (!edges) return;
+  if (!edges)
+    return;
   processEdgeList(edges, src, ds, lighting);
   ll_delete(edges, (void (*)(const void *))free);
 }
 
 // Draw a filled polygon with constant shading
-void polygon_drawFill(Polygon *p, Image *src, Color c) {
+void polygon_drawFill(Polygon *p, Image *src, Color c)
+{
   DrawState *ds = drawstate_create();
   ds->shade = ShadeConstant;
   ds->color = c;

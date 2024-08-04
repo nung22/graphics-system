@@ -137,6 +137,24 @@ void bezierCurve_draw(BezierCurve *b, Image *src, Color c)
   }
 }
 
+// Get a point on a Bezier surface
+void bezierSurface_getPoint(BezierSurface *b, Point *p, int u, int v)
+{
+  if (b && p)
+  {
+    point_copy(p, &b->cp[u * 4 + v]);
+  }
+}
+
+// Set a point on a Bezier surface
+void bezierSurface_setPoint(BezierSurface *b, Point *p, int u, int v)
+{
+  if (b && p)
+  {
+    point_copy(&b->cp[u * 4 + v], p);
+  }
+}
+
 // Subdivide a Bezier curve using the de Casteljau algorithm
 void bezierCurve_subdivide(BezierCurve *b, BezierCurve *left, BezierCurve *right)
 {
@@ -251,6 +269,75 @@ void bezierSurface_subdivide(BezierSurface *surface, BezierSurface *topLeft, Bez
       topRight->cp[i * 4 + j] = topRightCurves[j].cp[i];
       bottomLeft->cp[i * 4 + j] = bottomLeftCurves[j].cp[i];
       bottomRight->cp[i * 4 + j] = bottomRightCurves[j].cp[i];
+    }
+  }
+}
+
+// Compute the tangent vector in the U direction at a control point
+static void bezierSurface_tangentU(BezierSurface *bc, int i, int j, Vector *tangent)
+{
+  if (i == 0)
+  {
+    vector_set(tangent,
+               bc->cp[1 * 4 + j].val[0] - bc->cp[0 * 4 + j].val[0],
+               bc->cp[1 * 4 + j].val[1] - bc->cp[0 * 4 + j].val[1],
+               bc->cp[1 * 4 + j].val[2] - bc->cp[0 * 4 + j].val[2]);
+  }
+  else if (i == 3)
+  {
+    vector_set(tangent,
+               bc->cp[3 * 4 + j].val[0] - bc->cp[2 * 4 + j].val[0],
+               bc->cp[3 * 4 + j].val[1] - bc->cp[2 * 4 + j].val[1],
+               bc->cp[3 * 4 + j].val[2] - bc->cp[2 * 4 + j].val[2]);
+  }
+  else
+  {
+    vector_set(tangent,
+               bc->cp[(i + 1) * 4 + j].val[0] - bc->cp[(i - 1) * 4 + j].val[0],
+               bc->cp[(i + 1) * 4 + j].val[1] - bc->cp[(i - 1) * 4 + j].val[1],
+               bc->cp[(i + 1) * 4 + j].val[2] - bc->cp[(i - 1) * 4 + j].val[2]);
+  }
+}
+
+// Compute the tangent vector in the V direction at a control point
+static void bezierSurface_tangentV(BezierSurface *bc, int i, int j, Vector *tangent)
+{
+  if (j == 0)
+  {
+    vector_set(tangent,
+               bc->cp[i * 4 + 1].val[0] - bc->cp[i * 4 + 0].val[0],
+               bc->cp[i * 4 + 1].val[1] - bc->cp[i * 4 + 0].val[1],
+               bc->cp[i * 4 + 1].val[2] - bc->cp[i * 4 + 0].val[2]);
+  }
+  else if (j == 3)
+  {
+    vector_set(tangent,
+               bc->cp[i * 4 + 3].val[0] - bc->cp[i * 4 + 2].val[0],
+               bc->cp[i * 4 + 3].val[1] - bc->cp[i * 4 + 2].val[1],
+               bc->cp[i * 4 + 3].val[2] - bc->cp[i * 4 + 2].val[2]);
+  }
+  else
+  {
+    vector_set(tangent,
+               bc->cp[i * 4 + (j + 1)].val[0] - bc->cp[i * 4 + (j - 1)].val[0],
+               bc->cp[i * 4 + (j + 1)].val[1] - bc->cp[i * 4 + (j - 1)].val[1],
+               bc->cp[i * 4 + (j + 1)].val[2] - bc->cp[i * 4 + (j - 1)].val[2]);
+  }
+}
+
+// Compute the surface normals for each control point in the Bezier surface
+void bezierSurface_normals(BezierSurface *bc, Vector *v)
+{
+  Vector tangentU, tangentV, normal;
+  for (int i = 0; i < 4; i++)
+  {
+    for (int j = 0; j < 4; j++)
+    {
+      bezierSurface_tangentU(bc, i, j, &tangentU);
+      bezierSurface_tangentV(bc, i, j, &tangentV);
+      vector_cross(&tangentU, &tangentV, &normal);
+      vector_normalize(&normal);
+      vector_copy(&v[i * 4 + j], &normal);
     }
   }
 }

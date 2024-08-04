@@ -26,16 +26,16 @@ LIBS = -lm -limageIO
 LFLAGS = -L$(LIBDIR) -L/usr/local/lib
 
 # put all of the relevant include files here
-_DEPS = ppmIO.h image.h gif.h color.h point.h line.h shape.h list.h polygon.h vector.h matrix.h view.h drawstate.h bezier.h module.h graphics.h
+_DEPS = ppmIO.h image.h gif.h color.h point.h line.h shape.h list.h polygon.h plyRead.h vector.h matrix.h view.h lighting.h drawstate.h bezier.h module.h graphics.h
 
 # convert them to point to the right place
 DEPS = $(patsubst %,$(INCDIR)/%,$(_DEPS))
 
 # put a list of the executables here
-EXECUTABLES = test9a test9b test9c test9d test9e test9f test9g
+EXECUTABLES = test-lighting-shading test9bez test9a test9b test9c test9d test9e test9f test9g
 
 # put a list of all the object files here for all executables (with .o endings)
-_OBJ = test9a.o test9b.o test9c.o test9d.o test9e.o test9f.o test9g.o
+_OBJ = test-lighting-shading.o test9bez.o test9a.o test9b.o test9c.o test9d.o test9e.o test9f.o test9g.o
 
 # convert them to point to the right place
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
@@ -55,6 +55,15 @@ all:
 	for i in $(EXECUTABLES); do (make $$i) ; done
 
 # put the specific executable rules here
+
+test-lighting-shading: $(ODIR)/test-lighting-shading.o
+	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
+
+test9bez: $(ODIR)/test9bez.o
+	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
+
+# test9teapot: $(ODIR)/test9teapot.o
+# 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 test9a: $(ODIR)/test9a.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)

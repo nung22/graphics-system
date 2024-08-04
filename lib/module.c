@@ -238,6 +238,18 @@ void module_draw(Module *md, Matrix *VTM, Matrix *GTM, DrawState *ds, Lighting *
   {
     switch (e->type)
     {
+    case ObjSurfaceCoeff:
+      ds->surfaceCoeff = e->obj.coeff; // set the surface coefficient in DrawState
+      break;
+
+    case ObjSurfaceColor:
+      ds->surface = e->obj.color; // set the surface color in DrawState
+      break;
+
+    case ObjBodyColor:
+      ds->body = e->obj.color; // set the body color in DrawState
+      break;
+
     case ObjColor:
       ds->color = e->obj.color; // set the color in DrawState
       break;
@@ -263,7 +275,7 @@ void module_draw(Module *md, Matrix *VTM, Matrix *GTM, DrawState *ds, Lighting *
       matrix_xformLine(VTM, &L);   // Transform by VTM
       line_normalize(&L);          // Normalize by the homogeneous coordinate
       printf("drawing line (%.2f %.2f) to (%.2f %.2f)\n",
-            L.a.val[0], L.a.val[1], L.b.val[0], L.b.val[1]);
+             L.a.val[0], L.a.val[1], L.b.val[0], L.b.val[1]);
       line_draw(&L, src, ds->color); // Draw the line
       break;
     }
@@ -271,13 +283,20 @@ void module_draw(Module *md, Matrix *VTM, Matrix *GTM, DrawState *ds, Lighting *
     case ObjPolygon:
     {
       Polygon P;
+      polygon_init(&P);                  // initialize the polygon
       polygon_copy(&P, &e->obj.polygon); // copy the polygon data
       matrix_xformPolygon(&LTM, &P);     // transform by LTM
       matrix_xformPolygon(GTM, &P);      // transform by GTM
-      matrix_xformPolygon(VTM, &P);      // transform by VTM
-      polygon_normalize(&P);             // normalize by the homogeneous coordinate
-      polygon_print(&P, stdout);         // print the polygon data
-      polygon_drawShade(&P, src, ds, lighting); // draw the polygon
+      if (ds->shade == ShadeGouraud)
+      {
+        polygon_shade(&P, ds, lighting);
+      }
+      matrix_xformPolygon(VTM, &P); // transform by VTM
+      polygon_normalize(&P);        // normalize by the homogeneous coordinate
+      fprintf(stdout, "Shading polygon\n");
+      polygon_print(&P, stdout); // print the polygon data
+      polygon_drawShade(&P, src, ds, lighting);
+
       break;
     }
 
@@ -419,21 +438,41 @@ void module_bezierSurface(Module *m, BezierSurface *b, int divisions, int solid)
 
   if (divisions == 0)
   {
+    Vector normals[16];
+    bezierSurface_normals(b, normals);
+
     if (solid)
     {
-      // Add squares
+      // Add triangles
       for (int i = 0; i < 3; i++)
       {
         for (int j = 0; j < 3; j++)
         {
           Polygon poly;
           polygon_init(&poly);
-          Point vertices[4] = {
-              b->cp[i * 4 + j],
-              b->cp[i * 4 + j + 1],
-              b->cp[(i + 1) * 4 + j + 1],
-              b->cp[(i + 1) * 4 + j]};
-          polygon_set(&poly, 4, vertices);
+          Point vertices[3];
+          Vector tri_normals[3];
+
+          // First triangle of the quad
+          vertices[0] = b->cp[i * 4 + j];
+          vertices[1] = b->cp[i * 4 + j + 1];
+          vertices[2] = b->cp[(i + 1) * 4 + j + 1];
+          tri_normals[0] = normals[i * 4 + j];
+          tri_normals[1] = normals[i * 4 + j + 1];
+          tri_normals[2] = normals[(i + 1) * 4 + j + 1];
+          polygon_set(&poly, 3, vertices);
+          polygon_setNormals(&poly, 3, tri_normals);
+          module_polygon(m, &poly);
+
+          // Second triangle of the quad
+          vertices[0] = b->cp[i * 4 + j];
+          vertices[1] = b->cp[(i + 1) * 4 + j + 1];
+          vertices[2] = b->cp[(i + 1) * 4 + j];
+          tri_normals[0] = normals[i * 4 + j];
+          tri_normals[1] = normals[(i + 1) * 4 + j + 1];
+          tri_normals[2] = normals[(i + 1) * 4 + j];
+          polygon_set(&poly, 3, vertices);
+          polygon_setNormals(&poly, 3, tri_normals);
           module_polygon(m, &poly);
         }
       }
@@ -484,8 +523,10 @@ void module_cube(Module *md, int solid)
   point_set3D(&pts[6], 0.5, 0.5, 0.5);
   point_set3D(&pts[7], -0.5, 0.5, 0.5);
 
-  if (solid) {
+  if (solid)
+  {
     Polygon p;
+    polygon_init(&p);
     Vector normals[6];
     polygon_init(&p);
 
@@ -497,40 +538,48 @@ void module_cube(Module *md, int solid)
     vector_set(&normals[4], -1, 0, 0); // Left face
     vector_set(&normals[5], 1, 0, 0);  // Right face
 
+    // Normals for each face
+    Vector front_normals[4] = {normals[0], normals[0], normals[0], normals[0]};
+    Vector back_normals[4] = {normals[1], normals[1], normals[1], normals[1]};
+    Vector top_normals[4] = {normals[2], normals[2], normals[2], normals[2]};
+    Vector bottom_normals[4] = {normals[3], normals[3], normals[3], normals[3]};
+    Vector left_normals[4] = {normals[4], normals[4], normals[4], normals[4]};
+    Vector right_normals[4] = {normals[5], normals[5], normals[5], normals[5]};
+
     // Front face
     Point front_face_pts[] = {pts[0], pts[1], pts[2], pts[3]};
     polygon_set(&p, 4, front_face_pts);
-    polygon_setNormals(&p, p.nVertex, &normals[0]);
+    polygon_setNormals(&p, 4, front_normals);
     module_polygon(md, &p);
 
     // Back face
     Point back_face_pts[] = {pts[4], pts[5], pts[6], pts[7]};
     polygon_set(&p, 4, back_face_pts);
-    polygon_setNormals(&p, p.nVertex, &normals[1]);
+    polygon_setNormals(&p, 4, back_normals);
     module_polygon(md, &p);
 
     // Top face
     Point top_face_pts[] = {pts[3], pts[2], pts[6], pts[7]};
     polygon_set(&p, 4, top_face_pts);
-    polygon_setNormals(&p, p.nVertex, &normals[2]);
+    polygon_setNormals(&p, 4, top_normals);
     module_polygon(md, &p);
 
     // Bottom face
     Point bottom_face_pts[] = {pts[0], pts[1], pts[5], pts[4]};
     polygon_set(&p, 4, bottom_face_pts);
-    polygon_setNormals(&p, p.nVertex, &normals[3]);
+    polygon_setNormals(&p, 4, bottom_normals);
     module_polygon(md, &p);
 
     // Left face
     Point left_face_pts[] = {pts[0], pts[3], pts[7], pts[4]};
     polygon_set(&p, 4, left_face_pts);
-    polygon_setNormals(&p, p.nVertex, &normals[4]);
+    polygon_setNormals(&p, 4, left_normals);
     module_polygon(md, &p);
 
     // Right face
     Point right_face_pts[] = {pts[1], pts[2], pts[6], pts[5]};
     polygon_set(&p, 4, right_face_pts);
-    polygon_setNormals(&p, p.nVertex, &normals[5]);
+    polygon_setNormals(&p, 4, right_normals);
     module_polygon(md, &p);
 
     polygon_clear(&p);
@@ -571,6 +620,7 @@ void module_cube(Module *md, int solid)
   }
 }
 
+// Function to create a cylinder
 void module_cylinder(Module *mod, int sides, int solid)
 {
   if (!mod || sides < 3)
@@ -584,12 +634,13 @@ void module_cylinder(Module *mod, int sides, int solid)
   int i;
 
   polygon_init(&p);
-  point_set3D(&xtop, 0, 1.0, 0.0);
-  point_set3D(&xbot, 0, 0.0, 0.0);
+  point_set3D(&xtop, 0, 0.5, 0.0);
+  point_set3D(&xbot, 0, -0.5, 0.0);
 
   for (i = 0; i < sides; i++)
   {
     Point pt[4];
+    Vector n[4];
 
     x1 = cos(i * M_PI * 2.0 / sides);
     z1 = sin(i * M_PI * 2.0 / sides);
@@ -600,55 +651,74 @@ void module_cylinder(Module *mod, int sides, int solid)
     {
       // Top fan triangle
       point_copy(&pt[0], &xtop);
-      point_set3D(&pt[1], x1, 1.0, z1);
-      point_set3D(&pt[2], x2, 1.0, z2);
+      point_set3D(&pt[1], x1, 0.5, z1);
+      point_set3D(&pt[2], x2, 0.5, z2);
+
+      // Normal for top fan triangle points upwards
+      vector_set(&n[0], 0, 1, 0);
+      vector_set(&n[1], 0, 1, 0);
+      vector_set(&n[2], 0, 1, 0);
 
       polygon_set(&p, 3, pt);
+      polygon_setNormals(&p, 3, n);
       module_polygon(mod, &p);
 
       // Bottom fan triangle
       point_copy(&pt[0], &xbot);
-      point_set3D(&pt[1], x1, 0.0, z1);
-      point_set3D(&pt[2], x2, 0.0, z2);
+      point_set3D(&pt[1], x1, -0.5, z1);
+      point_set3D(&pt[2], x2, -0.5, z2);
+
+      // Normal for bottom fan triangle points downwards
+      vector_set(&n[0], 0, -1, 0);
+      vector_set(&n[1], 0, -1, 0);
+      vector_set(&n[2], 0, -1, 0);
 
       polygon_set(&p, 3, pt);
+      polygon_setNormals(&p, 3, n);
       module_polygon(mod, &p);
 
       // Side quadrilateral
-      point_set3D(&pt[0], x1, 0.0, z1);
-      point_set3D(&pt[1], x2, 0.0, z2);
-      point_set3D(&pt[2], x2, 1.0, z2);
-      point_set3D(&pt[3], x1, 1.0, z1);
+      point_set3D(&pt[0], x1, -0.5, z1);
+      point_set3D(&pt[1], x2, -0.5, z2);
+      point_set3D(&pt[2], x2, 0.5, z2);
+      point_set3D(&pt[3], x1, 0.5, z1);
+
+      // Normals for side quadrilateral point outwards from the center
+      vector_set(&n[0], x1, 0, z1);
+      vector_set(&n[1], x2, 0, z2);
+      vector_set(&n[2], x2, 0, z2);
+      vector_set(&n[3], x1, 0, z1);
 
       polygon_set(&p, 4, pt);
+      polygon_setNormals(&p, 4, n);
       module_polygon(mod, &p);
     }
     else
     {
       // Wireframe: top circle
       Line line;
-      point_set3D(&pt[0], x1, 1.0, z1);
-      point_set3D(&pt[1], x2, 1.0, z2);
+      point_set3D(&pt[0], x1, 0.5, z1);
+      point_set3D(&pt[1], x2, 0.5, z2);
 
       line_set(&line, pt[0], pt[1]);
       module_line(mod, &line);
 
       // Wireframe: bottom circle
-      point_set3D(&pt[0], x1, 0.0, z1);
-      point_set3D(&pt[1], x2, 0.0, z2);
+      point_set3D(&pt[0], x1, -0.5, z1);
+      point_set3D(&pt[1], x2, -0.5, z2);
 
       line_set(&line, pt[0], pt[1]);
       module_line(mod, &line);
 
       // Wireframe: side lines
-      point_set3D(&pt[0], x1, 0.0, z1);
-      point_set3D(&pt[1], x1, 1.0, z1);
+      point_set3D(&pt[0], x1, -0.5, z1);
+      point_set3D(&pt[1], x1, 0.5, z1);
 
       line_set(&line, pt[0], pt[1]);
       module_line(mod, &line);
 
-      point_set3D(&pt[0], x2, 0.0, z2);
-      point_set3D(&pt[1], x2, 1.0, z2);
+      point_set3D(&pt[0], x2, -0.5, z2);
+      point_set3D(&pt[1], x2, 0.5, z2);
 
       line_set(&line, pt[0], pt[1]);
       module_line(mod, &line);
@@ -658,11 +728,12 @@ void module_cylinder(Module *mod, int sides, int solid)
   polygon_clear(&p);
 }
 
-// Function to create a sphere
+// Function to create a sphere centered at the origin
 void module_sphere(Module *md, int slices, int stacks, int solid)
 {
   Polygon p;
   Point pt[4];
+  Vector n[4];
   int i, j;
 
   polygon_init(&p);
@@ -676,14 +747,22 @@ void module_sphere(Module *md, int slices, int stacks, int solid)
       double theta1 = j * 2 * M_PI / slices;
       double theta2 = (j + 1) * 2 * M_PI / slices;
 
-      point_set3D(&pt[0], sin(phi1) * cos(theta1), cos(phi1), sin(phi1) * sin(theta1));
-      point_set3D(&pt[1], sin(phi2) * cos(theta1), cos(phi2), sin(phi2) * sin(theta1));
-      point_set3D(&pt[2], sin(phi2) * cos(theta2), cos(phi2), sin(phi2) * sin(theta2));
-      point_set3D(&pt[3], sin(phi1) * cos(theta2), cos(phi1), sin(phi1) * sin(theta2));
+      // Adjust points to be centered at the origin
+      point_set3D(&pt[0], 0.5 * sin(phi1) * cos(theta1), 0.5 * cos(phi1), 0.5 * sin(phi1) * sin(theta1));
+      point_set3D(&pt[1], 0.5 * sin(phi2) * cos(theta1), 0.5 * cos(phi2), 0.5 * sin(phi2) * sin(theta1));
+      point_set3D(&pt[2], 0.5 * sin(phi2) * cos(theta2), 0.5 * cos(phi2), 0.5 * sin(phi2) * sin(theta2));
+      point_set3D(&pt[3], 0.5 * sin(phi1) * cos(theta2), 0.5 * cos(phi1), 0.5 * sin(phi1) * sin(theta2));
+
+      // Set normals (same as the vertices for a sphere)
+      vector_set(&n[0], sin(phi1) * cos(theta1), cos(phi1), sin(phi1) * sin(theta1));
+      vector_set(&n[1], sin(phi2) * cos(theta1), cos(phi2), sin(phi2) * sin(theta1));
+      vector_set(&n[2], sin(phi2) * cos(theta2), cos(phi2), sin(phi2) * sin(theta2));
+      vector_set(&n[3], sin(phi1) * cos(theta2), cos(phi1), sin(phi1) * sin(theta2));
 
       if (solid)
       {
         polygon_set(&p, 4, pt);
+        polygon_setNormals(&p, 4, n);
         module_polygon(md, &p);
       }
       else
@@ -704,18 +783,19 @@ void module_sphere(Module *md, int slices, int stacks, int solid)
   polygon_clear(&p);
 }
 
-// Function to create a pyramid
+// Function to create a pyramid centered at the origin
 void module_pyramid(Module *md, int solid)
 {
   Point base[4], apex;
   Polygon p;
+  Vector n[3];
   Line l;
 
-  point_set3D(&base[0], -1, 0, -1);
-  point_set3D(&base[1], 1, 0, -1);
-  point_set3D(&base[2], 1, 0, 1);
-  point_set3D(&base[3], -1, 0, 1);
-  point_set3D(&apex, 0, 1, 0);
+  point_set3D(&base[0], -0.5, -0.5, -0.5);
+  point_set3D(&base[1], 0.5, -0.5, -0.5);
+  point_set3D(&base[2], 0.5, -0.5, 0.5);
+  point_set3D(&base[3], -0.5, -0.5, 0.5);
+  point_set3D(&apex, 0, 0.5, 0);
 
   polygon_init(&p);
 
@@ -723,13 +803,41 @@ void module_pyramid(Module *md, int solid)
   if (solid)
   {
     polygon_set(&p, 4, base);
+
+    // Normal for the base (pointing down)
+    vector_set(&n[0], 0, -1, 0);
+    vector_set(&n[1], 0, -1, 0);
+    vector_set(&n[2], 0, -1, 0);
+    vector_set(&n[3], 0, -1, 0);
+    polygon_setNormals(&p, 4, n);
     module_polygon(md, &p);
 
     // Create sides
     for (int i = 0; i < 4; i++)
     {
       Point pts[3] = {base[i], base[(i + 1) % 4], apex};
+      Vector side_normals[3];
+
+      // Calculate normals for the sides
+      Vector v1, v2, normal;
+      v1.val[0] = base[(i + 1) % 4].val[0] - base[i].val[0];
+      v1.val[1] = base[(i + 1) % 4].val[1] - base[i].val[1];
+      v1.val[2] = base[(i + 1) % 4].val[2] - base[i].val[2];
+      v2.val[0] = apex.val[0] - base[i].val[0];
+      v2.val[1] = apex.val[1] - base[i].val[1];
+      v2.val[2] = apex.val[2] - base[i].val[2];
+
+      normal.val[0] = v1.val[1] * v2.val[2] - v1.val[2] * v2.val[1];
+      normal.val[1] = v1.val[2] * v2.val[0] - v1.val[0] * v2.val[2];
+      normal.val[2] = v1.val[0] * v2.val[1] - v1.val[1] * v2.val[0];
+      vector_normalize(&normal);
+
+      side_normals[0] = normal;
+      side_normals[1] = normal;
+      side_normals[2] = normal;
+
       polygon_set(&p, 3, pts);
+      polygon_setNormals(&p, 3, side_normals);
       module_polygon(md, &p);
     }
   }

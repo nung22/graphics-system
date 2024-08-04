@@ -8,7 +8,7 @@
 #include <string.h>
 
 // Helper function to allocate image data
-int image_allocate_data(Image *src, int rows, int cols)
+static int image_allocate_data(Image *src, int rows, int cols)
 {
   // Allocate memory for 2D floating-point pixel data
   src->data = (FPixel **)malloc(rows * sizeof(FPixel *));

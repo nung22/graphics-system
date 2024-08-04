@@ -33,6 +33,7 @@ void polygon_normalize(Polygon *p);
 void polygon_draw(Polygon *p, Image *src, Color c);
 void polygon_drawFill(Polygon *p, Image *src, Color c);
 void polygon_drawFillB(Polygon *p, Image *src, Color c);
+void polygon_shade(Polygon *p, DrawState *ds, Lighting *lighting);
 void polygon_drawShade(Polygon *p, Image *src, DrawState *ds, Lighting *lighting);
 
 #endif

@@ -2,7 +2,7 @@
 
 #define BEZIER_H
 
-#include "line.h"
+#include "vector.h"
 
 // Structure to represent a Bezier curve
 typedef struct
@@ -27,6 +27,9 @@ void bezierCurve_copy(BezierCurve *to, BezierCurve *from);
 void bezierCurve_zBuffer(BezierCurve *b, int flag);
 void bezierSurface_zBuffer(BezierSurface *b, int flag);
 void bezierCurve_draw(BezierCurve *b, Image *src, Color c);
+void bezierSurface_getPoint(BezierSurface *b,Point *p,  int u, int v);
+void bezierSurface_setPoint(BezierSurface *b, Point *p, int u, int v);
+void bezierSurface_normals(BezierSurface *b, Vector *v);
 
 
 /* Function prototypes for subdivision */
