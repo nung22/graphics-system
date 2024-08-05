@@ -32,10 +32,10 @@ _DEPS = ppmIO.h image.h gif.h color.h point.h line.h shape.h list.h polygon.h pl
 DEPS = $(patsubst %,$(INCDIR)/%,$(_DEPS))
 
 # put a list of the executables here
-EXECUTABLES = test-lighting-shading test9bez test9a test9b test9c test9d test9e test9f test9g
+EXECUTABLES = test-lighting-shading test9bez test9a test9b test9c test9d test9e
 
 # put a list of all the object files here for all executables (with .o endings)
-_OBJ = test-lighting-shading.o test9bez.o test9a.o test9b.o test9c.o test9d.o test9e.o test9f.o test9g.o
+_OBJ = test-lighting-shading.o test9bez.o test9a.o test9b.o test9c.o test9d.o test9e.o
 
 # convert them to point to the right place
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
@@ -62,9 +62,6 @@ test-lighting-shading: $(ODIR)/test-lighting-shading.o
 test9bez: $(ODIR)/test9bez.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-# test9teapot: $(ODIR)/test9teapot.o
-# 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
 test9a: $(ODIR)/test9a.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
@@ -78,12 +75,6 @@ test9d: $(ODIR)/test9d.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 test9e: $(ODIR)/test9e.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-test9f: $(ODIR)/test9f.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-test9g: $(ODIR)/test9g.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 .PHONY: clean

@@ -729,6 +729,7 @@ void module_cylinder(Module *mod, int sides, int solid)
 }
 
 // Function to create a sphere centered at the origin
+// Function to create a sphere
 void module_sphere(Module *md, int slices, int stacks, int solid)
 {
   Polygon p;
@@ -747,11 +748,11 @@ void module_sphere(Module *md, int slices, int stacks, int solid)
       double theta1 = j * 2 * M_PI / slices;
       double theta2 = (j + 1) * 2 * M_PI / slices;
 
-      // Adjust points to be centered at the origin
-      point_set3D(&pt[0], 0.5 * sin(phi1) * cos(theta1), 0.5 * cos(phi1), 0.5 * sin(phi1) * sin(theta1));
-      point_set3D(&pt[1], 0.5 * sin(phi2) * cos(theta1), 0.5 * cos(phi2), 0.5 * sin(phi2) * sin(theta1));
-      point_set3D(&pt[2], 0.5 * sin(phi2) * cos(theta2), 0.5 * cos(phi2), 0.5 * sin(phi2) * sin(theta2));
-      point_set3D(&pt[3], 0.5 * sin(phi1) * cos(theta2), 0.5 * cos(phi1), 0.5 * sin(phi1) * sin(theta2));
+      // Set points
+      point_set3D(&pt[0], sin(phi1) * cos(theta1), cos(phi1), sin(phi1) * sin(theta1));
+      point_set3D(&pt[1], sin(phi2) * cos(theta1), cos(phi2), sin(phi2) * sin(theta1));
+      point_set3D(&pt[2], sin(phi2) * cos(theta2), cos(phi2), sin(phi2) * sin(theta2));
+      point_set3D(&pt[3], sin(phi1) * cos(theta2), cos(phi1), sin(phi1) * sin(theta2));
 
       // Set normals (same as the vertices for a sphere)
       vector_set(&n[0], sin(phi1) * cos(theta1), cos(phi1), sin(phi1) * sin(theta1));

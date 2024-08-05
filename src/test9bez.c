@@ -1,9 +1,9 @@
 /*
-  Bruce A Maxwell
+  Nicholas Ung
   Summer 2024
   CS 5310
 
-  Creates a simple Bezier curve for testing surface normal directions
+  Creates a rug with simple Bezier curves for testing surface normal directions
 
   Accepts one command line parameter, which is the number of
   subdivisions to execute.
@@ -16,7 +16,7 @@
 
 int main(int argc, char *argv[]) {
   char buffer[256];
-  Color white, direct, bkg, red;
+  Color white, direct, bkg, red, gold;
   DrawState ds;
   Module *surface;
   View3D view;
@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
   color_set(&direct, 0.8, 0.8, 0.8 );
   color_set(&bkg, 0.1, 0.07, 0.06 );
   color_set(&red, 0.8, 0.40, 0.50 );
+  color_set(&gold, 1.0, 0.8, 0.0 );
 
   // set up the drawstate
   drawstate_init( &ds );
@@ -92,16 +93,32 @@ int main(int argc, char *argv[]) {
   
   surface = module_create();
 
+  // create the red trim
   module_color(surface, &white);
   module_bodyColor( surface, &red );
   module_translate( surface, -0.5, 0.0, -0.5 );
   module_scale( surface, 3, 1, 2 );
   module_bezierSurface( surface, &bs, divisions, 1 );
 
+  // create the gold center
+  module_bodyColor(surface, &gold);
+  module_translate( surface, 0.0, 0.09, 0.0 );
+  module_scale( surface, .9, .9, .9 );
+  module_bezierSurface( surface, &bs, divisions, 1 );
+	matrix_rotateY(&GTM, cos(0.2), sin(0.6) );
+	matrix_rotateX(&GTM, cos(0.2), sin(0.6) );
+
   module_draw( surface, &VTM, &GTM, &ds, light, src );
 
   sprintf(buffer, "test9bez.ppm");
   image_write(src, buffer);
+
+  printf("Converting to low resolution image\n");
+  sprintf(buffer, "convert -resize 25%% test9bez.ppm test9bez.png");
+  system(buffer);
+
+  printf("Deleting high-res image\n");
+  system("rm test9bez.ppm");
 
   // clean up
   printf("cleaning up\n");

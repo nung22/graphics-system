@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   system(buffer);
 
   printf("Deleting high-res image\n");
-  //  system("rm starfuries.ppm");
+   system("rm starfuries.ppm");
 
   // ought to free stuff here
 	image_free(src);
