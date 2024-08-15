@@ -32,10 +32,10 @@ _DEPS = image.h color.h point.h line.h matrix.h vector.h shape.h polygon.h view.
 DEPS = $(patsubst %,$(INCDIR)/%,$(_DEPS))
 
 # put a list of the executables here
-EXECUTABLES = test5a test5b test5c test5d lab5-1 lab5-2 
+EXECUTABLES = test5a test5b test5c test5d lab5-1 lab5-2 lab5-3
 
 # put a list of all the object files here for all executables (with .o endings)
-_OBJ = test5a.o test5b.o test5c.o test5d.o lab5-1.o lab5-2.o
+_OBJ = test5a.o test5b.o test5c.o test5d.o lab5-1.o lab5-2.o lab5-3.o
 
 # convert them to point to the right place
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
@@ -74,6 +74,9 @@ lab5-1: $(ODIR)/lab5-1.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 lab5-2: $(ODIR)/lab5-2.o
+	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
+
+lab5-3: $(ODIR)/lab5-3.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 .PHONY: clean
