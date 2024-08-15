@@ -1,4 +1,4 @@
-# Lab 9: Lighting and Shading
+# Lab 10: Make it Real
 
 **Name:** Nicholas Ung
 

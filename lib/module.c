@@ -514,14 +514,14 @@ void module_cube(Module *md, int solid)
   Point pts[8];
 
   // Define the vertices of the cube
-  point_set3D(&pts[0], -0.5, -0.5, -0.5);
-  point_set3D(&pts[1], 0.5, -0.5, -0.5);
-  point_set3D(&pts[2], 0.5, 0.5, -0.5);
-  point_set3D(&pts[3], -0.5, 0.5, -0.5);
-  point_set3D(&pts[4], -0.5, -0.5, 0.5);
-  point_set3D(&pts[5], 0.5, -0.5, 0.5);
-  point_set3D(&pts[6], 0.5, 0.5, 0.5);
-  point_set3D(&pts[7], -0.5, 0.5, 0.5);
+  point_set3D(&pts[0], -1, -1, -1);
+  point_set3D(&pts[1], 1, -1, -1);
+  point_set3D(&pts[2], 1, 1, -1);
+  point_set3D(&pts[3], -1, 1, -1);
+  point_set3D(&pts[4], -1, -1, 1);
+  point_set3D(&pts[5], 1, -1, 1);
+  point_set3D(&pts[6], 1, 1, 1);
+  point_set3D(&pts[7], -1, 1, 1);
 
   if (solid)
   {
@@ -728,7 +728,6 @@ void module_cylinder(Module *mod, int sides, int solid)
   polygon_clear(&p);
 }
 
-// Function to create a sphere centered at the origin
 // Function to create a sphere
 void module_sphere(Module *md, int slices, int stacks, int solid)
 {
@@ -853,6 +852,82 @@ void module_pyramid(Module *md, int solid)
     }
     line_set(&l, base[3], base[0]);
     module_line(md, &l);
+  }
+
+  polygon_clear(&p);
+}
+
+// Function to create a torus
+void module_torus(Module *md, float majorRadius, float minorRadius, int uSteps, int vSteps, int solid)
+{
+  if (!md || uSteps < 2 || vSteps < 2)
+  {
+    return;
+  }
+
+  Polygon p;
+  Point pt[4];
+  Vector normals[4];
+  float u, v;
+  float du = 2.0 * M_PI / uSteps;
+  float dv = 2.0 * M_PI / vSteps;
+
+  polygon_init(&p);
+
+  for (int i = 0; i < uSteps; i++)
+  {
+    for (int j = 0; j < vSteps; j++)
+    {
+      u = i * du;
+      v = j * dv;
+
+      // Calculate the four vertices of the quad
+      point_set3D(&pt[0],
+                  (majorRadius + minorRadius * cos(v)) * cos(u),
+                  (majorRadius + minorRadius * cos(v)) * sin(u),
+                  minorRadius * sin(v));
+
+      point_set3D(&pt[1],
+                  (majorRadius + minorRadius * cos(v + dv)) * cos(u),
+                  (majorRadius + minorRadius * cos(v + dv)) * sin(u),
+                  minorRadius * sin(v + dv));
+
+      point_set3D(&pt[2],
+                  (majorRadius + minorRadius * cos(v + dv)) * cos(u + du),
+                  (majorRadius + minorRadius * cos(v + dv)) * sin(u + du),
+                  minorRadius * sin(v + dv));
+
+      point_set3D(&pt[3],
+                  (majorRadius + minorRadius * cos(v)) * cos(u + du),
+                  (majorRadius + minorRadius * cos(v)) * sin(u + du),
+                  minorRadius * sin(v));
+
+      if (solid)
+      {
+        // Calculate normals for each vertex
+        vector_set(&normals[0], cos(v) * cos(u), cos(v) * sin(u), sin(v));
+        vector_set(&normals[1], cos(v + dv) * cos(u), cos(v + dv) * sin(u), sin(v + dv));
+        vector_set(&normals[2], cos(v + dv) * cos(u + du), cos(v + dv) * sin(u + du), sin(v + dv));
+        vector_set(&normals[3], cos(v) * cos(u + du), cos(v) * sin(u + du), sin(v));
+
+        polygon_set(&p, 4, pt);
+        polygon_setNormals(&p, 4, normals);
+        module_polygon(md, &p);
+      }
+      else
+      {
+        // Draw lines for wireframe mode
+        Line l;
+        line_set(&l, pt[0], pt[1]);
+        module_line(md, &l);
+        line_set(&l, pt[1], pt[2]);
+        module_line(md, &l);
+        line_set(&l, pt[2], pt[3]);
+        module_line(md, &l);
+        line_set(&l, pt[3], pt[0]);
+        module_line(md, &l);
+      }
+    }
   }
 
   polygon_clear(&p);

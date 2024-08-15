@@ -14,6 +14,7 @@
 #include "drawstate.h"
 #include "bezier.h"
 #include "module.h"
+#include "swarm.h"
 #include "plyRead.h"
 #include <math.h>
 

@@ -193,8 +193,6 @@ void polygon_print(Polygon *p, FILE *fp)
     {
       printf("Gouraud shade: %.2f %.2f %.2f\n", p->color[i].c[0], p->color[i].c[1], p->color[i].c[2]);
     }
-
-
   }
 }
 
@@ -426,7 +424,7 @@ static void fillScan(int scan, LinkedList *active, Image *src, DrawState *ds, Li
     float dzPerColumn = (p2->zIntersect - p1->zIntersect) / (p2->xIntersect - p1->xIntersect);
 
     // Initialize and calculate the interpolated color per column
-    Color curColor =  p1->cIntersect;
+    Color curColor = p1->cIntersect;
     Color dColorPerColumn;
     for (int k = 0; k < 3; k++)
     {
@@ -442,7 +440,6 @@ static void fillScan(int scan, LinkedList *active, Image *src, DrawState *ds, Li
       }
     }
 
-
     for (; i <= f; i++)
     {
       float avgZ = (p1->zIntersect + p2->zIntersect) / 2;
@@ -455,6 +452,12 @@ static void fillScan(int scan, LinkedList *active, Image *src, DrawState *ds, Li
         for (int k = 0; k < 3; k++)
         {
           finalColor.c[k] = curColor.c[k] / curZ;
+        }
+
+        // Clamp color values to avoid artifacts
+        for (int k = 0; k < 3; k++)
+        {
+          finalColor.c[k] = fmin(fmax(finalColor.c[k], 0.0), 1.0);
         }
 
         image_setColor(src, scan, i, finalColor);

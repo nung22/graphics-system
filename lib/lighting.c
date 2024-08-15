@@ -27,7 +27,15 @@ void lighting_delete(Lighting *lights)
 void lighting_init(Lighting *l)
 {
   l->nLights = 0;
-  memcpy(l->light, malloc(MAX_LIGHTS * sizeof(Light)), MAX_LIGHTS * sizeof(Light));
+  for (int i = 0; i < MAX_LIGHTS; i++)
+  {
+    l->light[i].type = LightNone;
+    color_set(&l->light[i].color, 0.0, 0.0, 0.0);  // Set color to black
+    vector_set(&l->light[i].direction, 0.0, 0.0, 0.0); // Set direction to zero
+    point_set3D(&l->light[i].position, 0.0, 0.0, 0.0);   // Set position to origin
+    l->light[i].cutoff = 0.0;     // Default cutoff
+    l->light[i].sharpness = 0.0;  // Default sharpness
+  }
 }
 
 // Reset a lighting structure to 0 lights
@@ -118,7 +126,8 @@ void lighting_shading(Lighting *l, Vector *N, Vector *V, Point *P, Color *Cb, Co
       break;
 
     case LightPoint:
-      // Point light
+      
+      // Gouraud shading
       vector_subtract(&light->position, P, &L);
       vector_normalize(&L);
 
@@ -163,7 +172,6 @@ void lighting_shading(Lighting *l, Vector *N, Vector *V, Point *P, Color *Cb, Co
         float surface = Cs->c[i] * light->color.c[i] * beta;
         intensity.c[i] += body + surface;
         c->c[i] += intensity.c[i];
-
       }
 
       break;

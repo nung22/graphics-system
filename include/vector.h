@@ -16,5 +16,7 @@ double vector_dot(Vector *a, Vector *b);
 void vector_cross(Vector *a, Vector *b, Vector *c);
 void vector_add(Vector *a, Vector *b, Vector *result);
 void vector_subtract(Vector *a, Vector *b, Vector *result);
+void vector_scale(Vector *v, float scale, Vector *result);
+void point_add_vector(Point *p, Vector *v, Point *result);
 
 #endif

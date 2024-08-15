@@ -62,16 +62,32 @@ void vector_cross(Vector *a, Vector *b, Vector *c)
   c->val[3] = 0.0; // Ensure the w component is zero for vectors
 }
 
-void vector_add(Vector *a, Vector *b, Vector *result) {
-    result->val[0] = a->val[0] + b->val[0];
-    result->val[1] = a->val[1] + b->val[1];
-    result->val[2] = a->val[2] + b->val[2];
-    result->val[3] = 0.0; // homogeneous coordinate for vectors
+// Adds two vectors and stores the result in the third vector
+void vector_add(Vector *a, Vector *b, Vector *result)
+{
+  result->val[0] = a->val[0] + b->val[0];
+  result->val[1] = a->val[1] + b->val[1];
+  result->val[2] = a->val[2] + b->val[2];
+  result->val[3] = 0.0; // homogeneous coordinate for vectors
 }
 
-void vector_subtract(Vector *a, Vector *b, Vector *result) {
-    result->val[0] = a->val[0] - b->val[0];
-    result->val[1] = a->val[1] - b->val[1];
-    result->val[2] = a->val[2] - b->val[2];
-    result->val[3] = 0.0; // homogeneous coordinate for vectors
+// Subtracts two vectors and stores the result in the third vector
+void vector_subtract(Vector *a, Vector *b, Vector *result)
+{
+  result->val[0] = a->val[0] - b->val[0];
+  result->val[1] = a->val[1] - b->val[1];
+  result->val[2] = a->val[2] - b->val[2];
+  result->val[3] = 0.0; // homogeneous coordinate for vectors
+}
+
+// Scales a vector by a scalar value
+void vector_scale(Vector *v, float scale, Vector *result)
+{
+  vector_set(result, v->val[0] * scale, v->val[1] * scale, v->val[2] * scale);
+}
+
+// Adds a scaled vector to a point
+void point_add_vector(Point *p, Vector *v, Point *result)
+{
+  point_set3D(result, p->val[0] + v->val[0], p->val[1] + v->val[1], p->val[2] + v->val[2]);
 }

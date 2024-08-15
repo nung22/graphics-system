@@ -95,5 +95,6 @@ void module_sphere(Module *md, int slices, int stacks, int solid);
 void module_pyramid(Module *md, int solid);
 void module_bezierCurve(Module *m, BezierCurve *b, int divisions);
 void module_bezierSurface(Module *m, BezierSurface *b, int divisions, int solid);
+void module_torus(Module *mod, float majorRadius, float minorRadius, int uSteps, int vSteps, int solid);
 
 #endif // MODULE_H

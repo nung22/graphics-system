@@ -26,16 +26,16 @@ LIBS = -lm -limageIO
 LFLAGS = -L$(LIBDIR) -L/usr/local/lib
 
 # put all of the relevant include files here
-_DEPS = ppmIO.h image.h gif.h color.h point.h line.h shape.h list.h polygon.h plyRead.h vector.h matrix.h view.h lighting.h drawstate.h bezier.h module.h graphics.h
+_DEPS = ppmIO.h image.h gif.h color.h point.h line.h shape.h list.h polygon.h plyRead.h vector.h matrix.h view.h lighting.h drawstate.h bezier.h module.h swarm.h graphics.h
 
 # convert them to point to the right place
 DEPS = $(patsubst %,$(INCDIR)/%,$(_DEPS))
 
 # put a list of the executables here
-EXECUTABLES = test-lighting-shading test9bez test9a test9b test9c test9d test9e
+EXECUTABLES = test-swarm test-torus
 
 # put a list of all the object files here for all executables (with .o endings)
-_OBJ = test-lighting-shading.o test9bez.o test9a.o test9b.o test9c.o test9d.o test9e.o
+_OBJ = test-swarm.o test-torus.o
 
 # convert them to point to the right place
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
@@ -56,25 +56,10 @@ all:
 
 # put the specific executable rules here
 
-test-lighting-shading: $(ODIR)/test-lighting-shading.o
+test-swarm: $(ODIR)/test-swarm.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
-test9bez: $(ODIR)/test9bez.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-test9a: $(ODIR)/test9a.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-test9b: $(ODIR)/test9b.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-test9c: $(ODIR)/test9c.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-test9d: $(ODIR)/test9d.o
-	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
-
-test9e: $(ODIR)/test9e.o
+test-torus: $(ODIR)/test-torus.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 .PHONY: clean
