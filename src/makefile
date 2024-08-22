@@ -32,10 +32,10 @@ _DEPS = ppmIO.h image.h gif.h color.h point.h line.h shape.h list.h polygon.h pl
 DEPS = $(patsubst %,$(INCDIR)/%,$(_DEPS))
 
 # put a list of the executables here
-EXECUTABLES = test-swarm test-torus
+EXECUTABLES = test-swarm test-torus test-ring
 
 # put a list of all the object files here for all executables (with .o endings)
-_OBJ = test-swarm.o test-torus.o
+_OBJ = test-swarm.o test-torus.o test-ring.o
 
 # convert them to point to the right place
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
@@ -60,6 +60,9 @@ test-swarm: $(ODIR)/test-swarm.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 test-torus: $(ODIR)/test-torus.o
+	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
+
+test-ring: $(ODIR)/test-ring.o
 	$(CC) -o $(BINDIR)/$@ $^ $(CFLAGS) $(LFLAGS) $(LIBS)
 
 .PHONY: clean
